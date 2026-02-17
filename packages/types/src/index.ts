@@ -8,3 +8,5 @@
 export type { ApiError, ApiResponse, Post } from "./api";
 // 環境変数の型定義
 export type { Env } from "./env";
+// 通知型定義
+export type { CreateNotificationPayload, Notification } from "./notification";
