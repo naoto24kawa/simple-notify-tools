@@ -9,8 +9,9 @@
     "deploy": "wrangler deploy --config wrangler.jsonc"
   },
   "dependencies": {
+    "@repo/types": "workspace:*",
     "hono": "^4.10.6",
-    "@repo/types": "workspace:*"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@hono/node-server": "^1.19.6"
