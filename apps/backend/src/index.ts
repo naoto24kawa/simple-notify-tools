@@ -1,13 +1,14 @@
-import type { Env } from "@repo/types/env";
+import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { createEventsRoute } from "./routes/events";
+import { createNotificationRoutes } from "./routes/notifications";
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono();
 
-// CORS設定（開発環境でフロントエンドからのリクエストを許可）
 app.use("/*", cors());
 
-// ヘルスチェック用エンドポイント
+// Health check
 app.get("/api/health", (c) => {
   return c.json({
     status: "ok",
@@ -15,32 +16,21 @@ app.get("/api/health", (c) => {
   });
 });
 
-// 環境変数を取得してSPAに渡すAPIエンドポイント
-app.get("/api/config", (c) => {
-  // c.envから環境変数を取得
-  const appName = c.env.APP_NAME || "Hono + React App";
-  const appVersion = c.env.APP_VERSION || "1.0.0";
-  const apiEndpoint = c.env.API_ENDPOINT || "http://localhost:8787";
+// Notification routes
+const { app: notificationApp, subscribe } = createNotificationRoutes();
+app.route("/", notificationApp);
 
-  return c.json({
-    appName,
-    appVersion,
-    apiEndpoint,
-    timestamp: new Date().toISOString(),
-  });
-});
+// SSE events route
+const eventsApp = createEventsRoute(subscribe);
+app.route("/", eventsApp);
 
-// シンプルなGETエンドポイント例
-app.get("/api/hello", (c) => {
-  const name = c.req.query("name") || "World";
-  return c.json({
-    message: `Hello, ${name}!`,
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// AppType を export（Hono RPC用）
+// AppType for Hono RPC
 export type AppType = typeof app;
 
-// Cloudflare Workers用エクスポート
+const port = Number(process.env.PORT) || 3000;
+
+serve({ fetch: app.fetch, port }, (info) => {
+  console.log(`Notification server running at http://localhost:${info.port}`);
+});
+
 export default app;
