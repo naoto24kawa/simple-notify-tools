@@ -17,7 +17,12 @@ export function createNotificationRoutes(filePath?: string) {
 
   const app = new Hono()
     .post("/api/notify", async (c) => {
-      const body = await c.req.json();
+      let body: unknown;
+      try {
+        body = await c.req.json();
+      } catch {
+        return c.json({ error: "Invalid JSON" }, 400);
+      }
       const result = createNotificationSchema.safeParse(body);
       if (!result.success) {
         return c.json({ error: result.error.flatten() }, 400);
