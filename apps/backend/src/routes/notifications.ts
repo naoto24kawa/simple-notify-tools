@@ -6,7 +6,7 @@ const createNotificationSchema = z.object({
   title: z.string().min(1),
   message: z.string().min(1),
   category: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export type NotificationListener = (event: "created" | "read" | "deleted", data: unknown) => void;

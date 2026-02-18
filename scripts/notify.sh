@@ -20,7 +20,8 @@ NOTIFY_URL="http://${NOTIFY_HOST}:${NOTIFY_PORT}/api/notify"
 TITLE="${1:-Notification}"
 MESSAGE="${2:-}"
 CATEGORY="${3:-info}"
-METADATA="${4:-{}}"
+_DEFAULT_META='{}'
+METADATA="${4:-$_DEFAULT_META}"
 
 curl -sf -X POST "${NOTIFY_URL}" \
   -H "Content-Type: application/json" \
