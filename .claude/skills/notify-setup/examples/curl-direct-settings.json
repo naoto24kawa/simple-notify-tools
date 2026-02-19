@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat -) && LAST_MSG=$(echo \"$INPUT\" | jq -r '.last_assistant_message // \"Task completed\"' | head -c 200) && curl -sf -X POST http://localhost:23000/api/notify -H 'Content-Type: application/json' -d \"{\\\"title\\\":\\\"$(basename \"$CLAUDE_PROJECT_DIR\")\\\",\\\"message\\\":\\\"${LAST_MSG}\\\"}\""
+            "command": "INPUT=$(cat -) && LAST_MSG=$(printf '%s' \"$INPUT\" | jq -r '.last_assistant_message // \"Task completed\"' 2>/dev/null | tr -d '\\000-\\037' | head -c 200) && curl -sf -X POST http://localhost:23000/api/notify -H 'Content-Type: application/json' -d \"$(jq -n --arg t \"$(basename \"$CLAUDE_PROJECT_DIR\")\" --arg m \"${LAST_MSG:-Task completed}\" '{title:$t,message:$m}')\""
           }
         ]
       }
