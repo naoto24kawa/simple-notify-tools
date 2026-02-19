@@ -4,71 +4,64 @@ AI アシスタント向け共通ドキュメント。常に日本語で回答�
 
 ## プロジェクト概要
 
-**Hono + React モノレポテンプレート** - Cloudflare Pages/Workers 向けフルスタック Web アプリケーション
+**Hono + React 通知アプリケーション** - SSE ベースのリアルタイム通知システム
 
 | カテゴリ | 技術 |
 |---------|------|
-| バックエンド | Hono + Cloudflare Workers (開発時は Bun ネイティブ) |
+| バックエンド | Hono (Bun ネイティブ) |
 | フロントエンド | React 19 + Vite + Tailwind CSS 4 + shadcn/ui |
-| テスト | Vitest + Playwright + Storybook |
+| テスト | Bun test + Playwright + Storybook |
 | ツール | Bun, Biome, Lefthook |
 
 ## コマンド
 
 ```bash
-# 開発(別ターミナルで実行)
-bun run dev              # フロントエンド :5173
-bun run dev:backend      # バックエンド :23000 (通知サーバー)
+# 開発
+bun run dev              # API(:23000) + Vite(:5173) 同時起動
+bun run dev:server       # API サーバーのみ :23000
+bun run dev:client       # Vite のみ :5173
 
 # 品質チェック
 bun run lint             # Biome チェック
 bun run lint:fix         # 自動修正
-bun run test             # Playwright E2E テスト
+bun run test             # バックエンド単体テスト
+bun run test:e2e         # Playwright E2E テスト
 bun run validate         # lint + test + build 統合チェック
 bun run storybook        # Storybook :6006
 
-# バックエンド単体テスト
-cd apps/backend && bun test
+# ビルド・本番
+bun run build            # Vite ビルド(dist/)
+bun run start            # 本番サーバー :23000
 
-# デプロイ
-bun run deploy           # Pages + Workers デプロイ
-
-# shadcn/ui 追加(apps/frontend で実行)
-cd apps/frontend && bunx shadcn add <component>
+# shadcn/ui 追加
+bunx shadcn add <component>
 ```
 
-## モノレポ構造
+## ディレクトリ構造
 
 ```
-apps/
-├── frontend/           # React SPA
-│   ├── src/
-│   │   ├── components/ # UI コンポーネント
-│   │   ├── lib/        # api-client.ts, utils.ts
-│   │   └── styles/     # グローバルスタイル
-│   └── e2e/            # Playwright テスト
-└── backend/            # Hono 通知サーバー
-    └── src/
-        ├── index.ts    # エントリポイント(AppType export, ポート :23000)
-        ├── routes/     # notifications.ts, events.ts(SSE)
-        └── store/      # notification-store.ts(インメモリ)
+src/
+├── server/             # Hono 通知サーバー
+│   ├── index.ts        # エントリポイント(AppType export, ポート :23000)
+│   ├── routes/         # notifications.ts, events.ts(SSE), focus-window.ts
+│   ├── store/          # notification-store.ts(インメモリ + ファイル永続化)
+│   └── lib/            # desktop-notify.ts
+├── client/             # React SPA
+│   ├── index.tsx       # React エントリ
+│   ├── components/     # UI コンポーネント
+│   ├── hooks/          # use-notifications, use-sse
+│   ├── lib/            # api-client.ts, utils.ts
+│   └── styles/         # グローバルスタイル
+└── shared/             # 共有型定義
+    └── types.ts        # Notification, CreateNotificationPayload
 
 scripts/
 └── notify.sh           # CLI 通知クライアント(curl ラッパー)
 
+e2e/                    # Playwright E2E テスト
 data/                   # ランタイム JSON データ(gitignore 対象)
-
-docs/
-└── plans/              # 設計ドキュメント
-
-packages/
-└── types/              # 共有型定義(Env インターフェース等)
+docs/plans/             # 設計ドキュメント
 ```
-
-### ワークスペース依存関係
-
-- **frontend** → `@repo/types`, `@repo/backend`（AppType 参照）
-- **backend** → `@repo/types`
 
 ## 環境セットアップ
 
@@ -79,13 +72,14 @@ bun install
 
 ## 通知システム
 
-backend は SSE ベースの通知サーバー。
+サーバーは SSE ベースの通知サーバー。
 
 | エンドポイント | 用途 |
 |---------------|------|
 | `POST /api/notify` | 通知送信(title, message, category, metadata) |
 | `GET /api/events` | SSE ストリーム(リアルタイム受信) |
 | `GET /api/health` | ヘルスチェック |
+| `POST /api/focus-window` | VS Code ウィンドウフォーカス |
 
 CLI から送信: `./scripts/notify.sh "Title" "Message" [category] [metadata_json]`
 
@@ -97,11 +91,11 @@ CLI から送信: `./scripts/notify.sh "Title" "Message" [category] [metadata_js
 
 - 機能実装時は対応するテストも実装・更新
 - 単体テスト: `*.test.ts(x)` を対象ファイルと同じディレクトリに配置
-- E2E: `apps/frontend/e2e/` に配置
+- E2E: `e2e/` に配置
 
 ### Lint (Biome)
 
-警告レベルのルール（即時対応不要）:
+警告レベルのルール(即時対応不要):
 - `noExcessiveCognitiveComplexity`: 複雑度 15 超過
 - `noNonNullAssertion`: 非 null アサーション使用
 - `useExhaustiveDependencies`: 依存配列不足
@@ -125,8 +119,8 @@ CLI から送信: `./scripts/notify.sh "Title" "Message" [category] [metadata_js
 ### 段階的改善
 
 ```
-Phase 1: 安全性（セキュリティ、型安全性）
-Phase 2: 保守性（SRP、可読性）
+Phase 1: 安全性(セキュリティ、型安全性)
+Phase 2: 保守性(SRP、可読性)
 Phase 3: パフォーマンス最適化
 Phase 4: 美観と規約統一
 ```
@@ -165,10 +159,9 @@ Phase 4: 美観と規約統一
 
 ## 重要な制約事項
 
-- **backend は Zod v4 使用**: v3 と API が異なる(`z.record` の引数形式等に注意)
+- **Zod v4 使用**: v3 と API が異なる(`z.record` の引数形式等に注意)
 - **TypeScript strict モード必須**: Hono RPC に必要
 - **CSS ファイルは Biome 対象外**: Tailwind ディレクティブとの互換性のため
-- **shadcn/ui は apps/frontend で実行**: ルートでは正しく動作しない
 - **`data/` は gitignore 対象**: `**/data/*.json` がignore されるため、テスト用JSONを配置しないこと
 - **pre-commit フック(Lefthook)**: コミット時に Biome が自動実行され、修正が自動ステージングされる
 

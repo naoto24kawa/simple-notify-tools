@@ -7,17 +7,17 @@ Claude Code 向け指示書。
 ## クイックリファレンス
 
 ```bash
-bun run dev              # フロントエンド :5173
-bun run dev:backend      # バックエンド :23000 (通知サーバー)
+bun run dev              # API(:23000) + Vite(:5173) 同時起動
+bun run start            # 本番サーバー :23000
 bun run lint             # Biome チェック
-bun run test             # Playwright E2E
-cd apps/backend && bun test  # バックエンド単体テスト
+bun run test             # バックエンド単体テスト
+bun run test:e2e         # Playwright E2E
 bun run validate         # lint + test + build 統合チェック
 ```
 
 ## プロジェクト概要
 
-Hono + React モノレポ。通知サーバー(backend)が SSE でリアルタイム通知を配信し、React フロントエンドが受信・表示する。`scripts/notify.sh` や `POST /api/notify` で通知を送信可能。
+Hono + React プロジェクト。通知サーバー(server)が SSE でリアルタイム通知を配信し、React フロントエンドが受信・表示する。`scripts/notify.sh` や `POST /api/notify` で通知を送信可能。
 
 ## 環境セットアップ
 
@@ -28,7 +28,7 @@ bun install
 
 ## 重要な制約
 
-- **backend は Zod v4**: `z.record` 等の API が v3 と異なる
+- **Zod v4 使用**: `z.record` 等の API が v3 と異なる
 - **TypeScript strict 必須**: Hono RPC に必要
 - **`data/` は gitignore 対象**: ランタイムJSON データ格納用
 
@@ -45,7 +45,7 @@ bun install
 コード参照時は `file_path:line_number` 形式を使用:
 
 ```
-例: src/lib/api-client.ts:15
+例: src/server/routes/notifications.ts:15
 ```
 
 ### コミットメッセージ
@@ -53,7 +53,7 @@ bun install
 ```
 <type>: <description>
 
-🤖 Generated with Claude Code
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 ```
 
 type: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
