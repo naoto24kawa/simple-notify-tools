@@ -23,17 +23,6 @@
           }
         ]
       }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/home/naoto24kawa/projects/naoto24kawa/simple-notify-tools/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\" \"info\" \"{\\\"project\\\":\\\"$CLAUDE_PROJECT_DIR\\\"}\""
-          }
-        ]
-      }
     ]
   },
   "enabledPlugins": {
