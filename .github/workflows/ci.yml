@@ -56,7 +56,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run backend tests
-        run: bun run test:backend
+        run: bun run test
 
   e2e-test:
     name: E2E Test
@@ -77,13 +77,12 @@ jobs:
         run: bunx playwright install --with-deps
 
       - name: Run E2E tests
-        run: bun run test
-        working-directory: apps/frontend
+        run: bun run test:e2e
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
           name: playwright-report
-          path: apps/frontend/playwright-report/
+          path: playwright-report/
           retention-days: 30

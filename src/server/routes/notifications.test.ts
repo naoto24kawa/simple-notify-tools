@@ -123,6 +123,6 @@ describe("Notification Routes", () => {
     });
 
     expect(calls).toHaveLength(1);
-    expect(calls[0].title).toBe("Hello");
+    expect(calls[0]?.title).toBe("Hello");
   });
 });
