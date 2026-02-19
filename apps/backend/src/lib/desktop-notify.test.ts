@@ -1,15 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { checkTerminalNotifier, sendDesktopNotification } from "./desktop-notify";
+import { checkNotifier, sendDesktopNotification } from "./desktop-notify";
 
-describe("checkTerminalNotifier", () => {
-  test("returns true when terminal-notifier exists", async () => {
-    const result = await checkTerminalNotifier();
+describe("checkNotifier", () => {
+  test("returns boolean based on platform", async () => {
+    const result = await checkNotifier();
     expect(typeof result).toBe("boolean");
   });
 });
 
 describe("sendDesktopNotification", () => {
-  test("calls spawn with correct args for basic notification", async () => {
+  test("calls spawn with osascript args for basic notification", async () => {
     const spawnCalls: string[][] = [];
     const mockSpawn = (args: string[]) => {
       spawnCalls.push(args);
@@ -21,13 +21,13 @@ describe("sendDesktopNotification", () => {
     );
 
     expect(spawnCalls).toHaveLength(1);
-    expect(spawnCalls[0]).toContain("-title");
-    expect(spawnCalls[0]).toContain("Test");
-    expect(spawnCalls[0]).toContain("-message");
-    expect(spawnCalls[0]).toContain("Hello");
+    expect(spawnCalls[0][0]).toBe("osascript");
+    expect(spawnCalls[0][1]).toBe("-e");
+    expect(spawnCalls[0][2]).toContain("Test");
+    expect(spawnCalls[0][2]).toContain("Hello");
   });
 
-  test("includes -execute when project metadata is provided", async () => {
+  test("spawns execute command separately when provided", async () => {
     const spawnCalls: string[][] = [];
     const mockSpawn = (args: string[]) => {
       spawnCalls.push(args);
@@ -38,11 +38,14 @@ describe("sendDesktopNotification", () => {
       { spawn: mockSpawn, available: true },
     );
 
-    expect(spawnCalls[0]).toContain("-execute");
-    expect(spawnCalls[0]).toContain("code-insiders /path/to/project");
+    expect(spawnCalls).toHaveLength(2);
+    // First call: osascript notification
+    expect(spawnCalls[0][0]).toBe("osascript");
+    // Second call: execute command
+    expect(spawnCalls[1]).toEqual(["code-insiders", "/path/to/project"]);
   });
 
-  test("includes -group when provided", async () => {
+  test("includes group as subtitle when provided", async () => {
     const spawnCalls: string[][] = [];
     const mockSpawn = (args: string[]) => {
       spawnCalls.push(args);
@@ -53,8 +56,7 @@ describe("sendDesktopNotification", () => {
       { spawn: mockSpawn, available: true },
     );
 
-    expect(spawnCalls[0]).toContain("-group");
-    expect(spawnCalls[0]).toContain("task_complete");
+    expect(spawnCalls[0][2]).toContain("task_complete");
   });
 
   test("does nothing when notifier is unavailable", async () => {

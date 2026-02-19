@@ -12,29 +12,23 @@ interface DesktopNotifyDeps {
   available?: boolean;
 }
 
+function buildOsascript(opts: DesktopNotifyOptions): string[] {
+  let script = `display notification "${opts.message}" with title "${opts.title}"`;
+  if (opts.group) {
+    script += ` subtitle "${opts.group}"`;
+  }
+  return ["osascript", "-e", script];
+}
+
 const defaultSpawn: SpawnFn = (args) => {
-  Bun.spawn(["terminal-notifier", ...args], {
+  Bun.spawn(args, {
     stdio: ["ignore", "ignore", "ignore"],
   });
 };
 
-let cachedAvailable: boolean | null = null;
-
-export async function checkTerminalNotifier(): Promise<boolean> {
-  if (cachedAvailable !== null) return cachedAvailable;
-  try {
-    const proc = Bun.spawn(["which", "terminal-notifier"], {
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    const code = await proc.exited;
-    cachedAvailable = code === 0;
-  } catch {
-    cachedAvailable = false;
-  }
-  if (!cachedAvailable) {
-    console.warn("[desktop-notify] terminal-notifier not found. Desktop notifications disabled.");
-  }
-  return cachedAvailable;
+export async function checkNotifier(): Promise<boolean> {
+  // osascript is always available on macOS
+  return process.platform === "darwin";
 }
 
 export async function sendDesktopNotification(
@@ -42,23 +36,26 @@ export async function sendDesktopNotification(
   deps: DesktopNotifyDeps = {},
 ): Promise<void> {
   const spawn = deps.spawn ?? defaultSpawn;
-  const available = deps.available ?? (await checkTerminalNotifier());
+  const available = deps.available ?? (await checkNotifier());
 
   if (!available) return;
 
-  const args: string[] = ["-title", opts.title, "-message", opts.message];
-
-  if (opts.group) {
-    args.push("-group", opts.group);
-  }
-
-  if (opts.execute) {
-    args.push("-execute", opts.execute);
-  }
+  const args = buildOsascript(opts);
 
   try {
     spawn(args);
   } catch (err) {
     console.warn("[desktop-notify] Failed to send notification:", err);
+  }
+
+  // osascript display notification does not support click actions.
+  // When execute is specified, run the command directly.
+  if (opts.execute) {
+    try {
+      const parts = opts.execute.split(" ");
+      spawn(parts);
+    } catch (err) {
+      console.warn("[desktop-notify] Failed to execute command:", err);
+    }
   }
 }
