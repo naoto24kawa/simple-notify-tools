@@ -13,8 +13,6 @@
 # Dependencies
 # ============================================
 node_modules
-apps/*/node_modules
-packages/*/node_modules
 
 # ============================================
 # Build Outputs
@@ -24,10 +22,6 @@ dist
 build
 out
 *.tgz
-
-# Workspaces
-apps/*/dist
-packages/*/dist
 
 # ============================================
 # Development & Build Caches

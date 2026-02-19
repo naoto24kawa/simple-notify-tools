@@ -23,6 +23,12 @@ CATEGORY="${3:-info}"
 _DEFAULT_META='{}'
 METADATA="${4:-$_DEFAULT_META}"
 
+# Inject hostname into metadata for focus-window filtering
+HOST_NAME="$(hostname)"
+METADATA=$(echo "${METADATA}" | sed 's/}$//' | sed "s/$/,\"hostname\":\"${HOST_NAME}\"}/")
+# Fix double comma if metadata was empty {}
+METADATA=$(echo "${METADATA}" | sed 's/{,/{/')
+
 curl -sf -X POST "${NOTIFY_URL}" \
   -H "Content-Type: application/json" \
   -d "{

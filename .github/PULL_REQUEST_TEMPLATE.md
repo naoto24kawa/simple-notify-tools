@@ -54,9 +54,9 @@ Closes #
 
 <!-- 影響を受ける領域にチェック -->
 
-- [ ] `apps/frontend`
-- [ ] `apps/backend`
-- [ ] `packages/types`
+- [ ] `src/client`
+- [ ] `src/server`
+- [ ] `src/shared`
 - [ ] その他:
 
 ## Testing
