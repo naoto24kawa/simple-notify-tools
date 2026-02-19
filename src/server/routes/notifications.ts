@@ -37,6 +37,7 @@ export function createNotificationRoutes(filePath?: string, options?: Notificati
         return c.json({ error: result.error.flatten() }, 400);
       }
       const notification = store.add(result.data);
+      console.log(`[notify] ${notification.title}: ${notification.message.slice(0, 80)}`);
       for (const listener of listeners) {
         listener("created", notification);
       }
