@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNotifications } from "@/hooks/use-notifications";
 import { NotificationBadge } from "./notification-badge";
 import { NotificationList } from "./notification-list";
@@ -14,12 +13,6 @@ export function App() {
     focusWindow,
     serverHostname,
   } = useNotifications();
-
-  useEffect(() => {
-    if (Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }, []);
 
   return (
     <div className="min-h-screen bg-background">

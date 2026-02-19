@@ -38,7 +38,6 @@ export function useNotifications() {
       if (event === "created") {
         const notification: Notification = JSON.parse(data);
         setNotifications((prev) => [notification, ...prev]);
-        showDesktopNotification(notification);
       } else if (event === "read") {
         const notification: Notification = JSON.parse(data);
         setNotifications((prev) => prev.map((n) => (n.id === notification.id ? notification : n)));
@@ -85,13 +84,4 @@ export function useNotifications() {
     focusWindow,
     serverHostname,
   };
-}
-
-function showDesktopNotification(notification: Notification) {
-  if (Notification.permission === "granted") {
-    new Notification(notification.title, {
-      body: notification.message,
-      tag: notification.id,
-    });
-  }
 }
