@@ -15,6 +15,8 @@
     "test:e2e": "playwright test",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
+    "test:backend": "cd apps/backend && bun test",
+    "typecheck": "tsc --noEmit -p apps/frontend/tsconfig.json && tsc --noEmit -p apps/backend/tsconfig.json && tsc --noEmit -p packages/types/tsconfig.json",
     "validate": "bun run lint && bun run test && bun run build",
     "pre-commit": "lefthook run pre-commit",
     "pre-push": "lefthook run pre-push",
