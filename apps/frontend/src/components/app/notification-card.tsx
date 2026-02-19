@@ -1,4 +1,5 @@
 import type { Notification } from "@repo/types/notification";
+import type React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,13 +8,41 @@ interface NotificationCardProps {
   notification: Notification;
   onMarkAsRead: (id: string) => void;
   onRemove: (id: string) => void;
+  onFocusWindow?: (projectDir: string) => void;
 }
 
-export function NotificationCard({ notification, onMarkAsRead, onRemove }: NotificationCardProps) {
+export function NotificationCard({
+  notification,
+  onMarkAsRead,
+  onRemove,
+  onFocusWindow,
+}: NotificationCardProps) {
   const timeAgo = formatTimeAgo(notification.createdAt);
+  const projectDir =
+    typeof notification.metadata.project === "string" ? notification.metadata.project : null;
+  const isClickable = !!projectDir && !!onFocusWindow;
+
+  const handleCardClick = () => {
+    if (isClickable && projectDir) {
+      onFocusWindow(projectDir);
+    }
+  };
 
   return (
-    <Card className={`p-4 ${notification.read ? "opacity-60" : "border-l-4 border-l-primary"}`}>
+    <Card
+      className={`p-4 ${notification.read ? "opacity-60" : "border-l-4 border-l-primary"} ${isClickable ? "cursor-pointer hover:bg-accent/50 transition-colors" : ""}`}
+      onClick={isClickable ? handleCardClick : undefined}
+      {...(isClickable && {
+        role: "button" as const,
+        tabIndex: 0,
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleCardClick();
+          }
+        },
+      })}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -36,12 +65,23 @@ export function NotificationCard({ notification, onMarkAsRead, onRemove }: Notif
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => onMarkAsRead(notification.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkAsRead(notification.id);
+              }}
             >
               Mark read
             </Button>
           )}
-          <Button type="button" variant="ghost" size="sm" onClick={() => onRemove(notification.id)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(notification.id);
+            }}
+          >
             Delete
           </Button>
         </div>

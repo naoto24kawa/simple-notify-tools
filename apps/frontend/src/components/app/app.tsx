@@ -4,7 +4,8 @@ import { NotificationBadge } from "./notification-badge";
 import { NotificationList } from "./notification-list";
 
 export function App() {
-  const { notifications, unreadCount, loading, connected, markAsRead, remove } = useNotifications();
+  const { notifications, unreadCount, loading, connected, markAsRead, remove, focusWindow } =
+    useNotifications();
 
   useEffect(() => {
     if (Notification.permission === "default") {
@@ -30,6 +31,7 @@ export function App() {
             notifications={notifications}
             onMarkAsRead={markAsRead}
             onRemove={remove}
+            onFocusWindow={focusWindow}
           />
         )}
       </main>

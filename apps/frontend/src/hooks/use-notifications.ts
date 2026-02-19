@@ -55,7 +55,19 @@ export function useNotifications() {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  return { notifications, unreadCount, loading, connected, markAsRead, remove };
+  const focusWindow = useCallback(async (projectDir: string) => {
+    try {
+      await fetch(`${API_BASE}/api/focus-window`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectDir }),
+      });
+    } catch (err) {
+      console.error("Failed to focus window:", err);
+    }
+  }, []);
+
+  return { notifications, unreadCount, loading, connected, markAsRead, remove, focusWindow };
 }
 
 function showDesktopNotification(notification: Notification) {
