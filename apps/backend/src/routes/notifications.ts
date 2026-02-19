@@ -40,7 +40,11 @@ export function createNotificationRoutes(filePath?: string, options?: Notificati
       for (const listener of listeners) {
         listener("created", notification);
       }
-      options?.onNotify?.(notification);
+      try {
+        options?.onNotify?.(notification);
+      } catch (err) {
+        console.warn("[notify] onNotify callback error:", err);
+      }
       return c.json(notification, 201);
     })
     .get("/api/notifications", (c) => {
