@@ -11,7 +11,16 @@ const createNotificationSchema = z.object({
 
 export type NotificationListener = (event: "created" | "read" | "deleted", data: unknown) => void;
 
-export function createNotificationRoutes(filePath?: string) {
+interface NotificationRoutesOptions {
+  onNotify?: (notification: {
+    title: string;
+    message: string;
+    category: string;
+    metadata: Record<string, unknown>;
+  }) => void;
+}
+
+export function createNotificationRoutes(filePath?: string, options?: NotificationRoutesOptions) {
   const store = new NotificationStore(filePath ?? "data/notifications.json");
   const listeners = new Set<NotificationListener>();
 
@@ -31,6 +40,7 @@ export function createNotificationRoutes(filePath?: string) {
       for (const listener of listeners) {
         listener("created", notification);
       }
+      options?.onNotify?.(notification);
       return c.json(notification, 201);
     })
     .get("/api/notifications", (c) => {

@@ -107,4 +107,22 @@ describe("Notification Routes", () => {
     });
     expect(res.status).toBe(404);
   });
+
+  test("POST /api/notify triggers desktop notification callback", async () => {
+    const calls: Array<{ title: string; message: string }> = [];
+    const routes = createNotificationRoutes(TEST_FILE, {
+      onNotify: (n) => {
+        calls.push({ title: n.title, message: n.message });
+      },
+    });
+
+    await routes.app.request("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "Hello", message: "World" }),
+    });
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].title).toBe("Hello");
+  });
 });
