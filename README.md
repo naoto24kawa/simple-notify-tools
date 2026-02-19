@@ -96,6 +96,5 @@ bun run dev              # フロントエンド開発サーバー (:5173)
 bun run dev:backend      # バックエンド開発サーバー (:23000)
 bun run lint             # Biome lint
 bun run lint:fix         # 自動修正
-cd apps/backend && bun test  # バックエンドテスト
-bun run test             # E2E テスト
+bun run test             # テスト (unit + E2E)
 ```
