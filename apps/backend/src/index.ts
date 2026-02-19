@@ -1,7 +1,9 @@
+import { hostname } from "node:os";
 import { join } from "node:path";
 import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
+import { sendDesktopNotification } from "./lib/desktop-notify";
 import { createEventsRoute } from "./routes/events";
 import { createFocusWindowRoute } from "./routes/focus-window";
 import { createNotificationRoutes } from "./routes/notifications";
@@ -14,12 +16,24 @@ app.use("/*", cors());
 app.get("/api/health", (c) => {
   return c.json({
     status: "ok",
+    hostname: hostname(),
     timestamp: new Date().toISOString(),
   });
 });
 
 // Notification routes
-const { app: notificationApp, subscribe } = createNotificationRoutes();
+const CODE_CMD = process.env.CODE_CMD || "code-insiders";
+const { app: notificationApp, subscribe } = createNotificationRoutes(undefined, {
+  onNotify: (n) => {
+    const project = typeof n.metadata.project === "string" ? n.metadata.project : undefined;
+    sendDesktopNotification({
+      title: n.title,
+      message: n.message,
+      group: n.category,
+      execute: project ? `${CODE_CMD} ${project}` : undefined,
+    });
+  },
+});
 app.route("/", notificationApp);
 
 // SSE events route
