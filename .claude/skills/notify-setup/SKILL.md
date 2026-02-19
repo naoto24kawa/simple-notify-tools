@@ -48,7 +48,7 @@ Add a `Stop` hook to `.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "<NOTIFY_TOOLS_DIR>/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\" \"info\" \"{\\\"project\\\":\\\"$CLAUDE_PROJECT_DIR\\\"}\""
+            "command": "<NOTIFY_TOOLS_DIR>/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\""
           }
         ]
       }
@@ -72,7 +72,7 @@ Add a `Stop` hook using curl directly:
         "hooks": [
           {
             "type": "command",
-            "command": "curl -sf -X POST http://localhost:23000/api/notify -H 'Content-Type: application/json' -d \"{\\\"title\\\":\\\"$(basename \"$CLAUDE_PROJECT_DIR\")\\\",\\\"message\\\":\\\"Task completed\\\",\\\"category\\\":\\\"info\\\",\\\"metadata\\\":{\\\"project\\\":\\\"$CLAUDE_PROJECT_DIR\\\"}}\""
+            "command": "curl -sf -X POST http://localhost:23000/api/notify -H 'Content-Type: application/json' -d \"{\\\"title\\\":\\\"$(basename \"$CLAUDE_PROJECT_DIR\")\\\",\\\"message\\\":\\\"Task completed\\\"}\""
           }
         ]
       }
@@ -81,7 +81,7 @@ Add a `Stop` hook using curl directly:
 }
 ```
 
-### 5. Verify
+### 4. Verify
 
 Trigger a `Stop` event and check the notification dashboard at `http://<HOST>:23000`.
 
@@ -92,7 +92,7 @@ For notifications across machines, set `NOTIFY_HOST` to the server's IP:
 ```json
 {
   "type": "command",
-  "command": "NOTIFY_HOST=192.168.1.100 <NOTIFY_TOOLS_DIR>/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\" \"info\" \"{\\\"project\\\":\\\"$CLAUDE_PROJECT_DIR\\\"}\""
+  "command": "NOTIFY_HOST=192.168.1.100 <NOTIFY_TOOLS_DIR>/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\""
 }
 ```
 

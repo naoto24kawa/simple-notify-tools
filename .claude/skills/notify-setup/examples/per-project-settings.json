@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "<NOTIFY_TOOLS_DIR>/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\" \"info\" \"{\\\"project\\\":\\\"$CLAUDE_PROJECT_DIR\\\"}\""
+            "command": "<NOTIFY_TOOLS_DIR>/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\""
           }
         ]
       }
