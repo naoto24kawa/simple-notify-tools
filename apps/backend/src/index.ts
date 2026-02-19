@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import { createEventsRoute } from "./routes/events";
+import { createFocusWindowRoute } from "./routes/focus-window";
 import { createNotificationRoutes } from "./routes/notifications";
 
 const app = new Hono();
@@ -24,6 +25,10 @@ app.route("/", notificationApp);
 // SSE events route
 const eventsApp = createEventsRoute(subscribe);
 app.route("/", eventsApp);
+
+// Focus window route
+const { app: focusWindowApp } = createFocusWindowRoute();
+app.route("/", focusWindowApp);
 
 // Serve frontend static files
 const frontendDist = join(import.meta.dir, "../../frontend/dist");
