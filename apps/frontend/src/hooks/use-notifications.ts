@@ -2,7 +2,7 @@ import type { Notification } from "@repo/types/notification";
 import { useCallback, useEffect, useState } from "react";
 import { useSSE } from "./use-sse";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);

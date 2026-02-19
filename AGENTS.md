@@ -8,7 +8,7 @@ AI アシスタント向け共通ドキュメント。常に日本語で回答�
 
 | カテゴリ | 技術 |
 |---------|------|
-| バックエンド | Hono + Cloudflare Workers |
+| バックエンド | Hono + Cloudflare Workers (開発時は Bun ネイティブ) |
 | フロントエンド | React 19 + Vite + Tailwind CSS 4 + shadcn/ui |
 | テスト | Vitest + Playwright + Storybook |
 | ツール | Bun, Biome, Lefthook |
@@ -16,21 +16,24 @@ AI アシスタント向け共通ドキュメント。常に日本語で回答�
 ## コマンド
 
 ```bash
-# 開発（別ターミナルで実行）
+# 開発(別ターミナルで実行)
 bun run dev              # フロントエンド :5173
-bun run dev:backend      # バックエンド :8787
+bun run dev:backend      # バックエンド :23000 (通知サーバー)
 
 # 品質チェック
 bun run lint             # Biome チェック
 bun run lint:fix         # 自動修正
-bun run test             # E2E テスト
-bun run test:coverage    # カバレッジ付きテスト
+bun run test             # Playwright E2E テスト
+bun run validate         # lint + test + build 統合チェック
 bun run storybook        # Storybook :6006
+
+# バックエンド単体テスト
+cd apps/backend && bun test
 
 # デプロイ
 bun run deploy           # Pages + Workers デプロイ
 
-# shadcn/ui 追加（apps/frontend で実行）
+# shadcn/ui 追加(apps/frontend で実行)
 cd apps/frontend && bunx shadcn add <component>
 ```
 
@@ -44,17 +47,49 @@ apps/
 │   │   ├── lib/        # api-client.ts, utils.ts
 │   │   └── styles/     # グローバルスタイル
 │   └── e2e/            # Playwright テスト
-└── backend/            # Hono API
-    └── src/index.ts    # エントリポイント（AppType export）
+└── backend/            # Hono 通知サーバー
+    └── src/
+        ├── index.ts    # エントリポイント(AppType export, ポート :23000)
+        ├── routes/     # notifications.ts, events.ts(SSE)
+        └── store/      # notification-store.ts(インメモリ)
+
+scripts/
+└── notify.sh           # CLI 通知クライアント(curl ラッパー)
+
+data/                   # ランタイム JSON データ(gitignore 対象)
+
+docs/
+└── plans/              # 設計ドキュメント
 
 packages/
-└── types/              # 共有型定義（Env インターフェース等）
+└── types/              # 共有型定義(Env インターフェース等)
 ```
 
 ### ワークスペース依存関係
 
 - **frontend** → `@repo/types`, `@repo/backend`（AppType 参照）
 - **backend** → `@repo/types`
+
+## 環境セットアップ
+
+```bash
+cp .env.example .env  # GITHUB_TOKEN 等を設定
+bun install
+```
+
+## 通知システム
+
+backend は SSE ベースの通知サーバー。
+
+| エンドポイント | 用途 |
+|---------------|------|
+| `POST /api/notify` | 通知送信(title, message, category, metadata) |
+| `GET /api/events` | SSE ストリーム(リアルタイム受信) |
+| `GET /api/health` | ヘルスチェック |
+
+CLI から送信: `./scripts/notify.sh "Title" "Message" [category] [metadata_json]`
+
+環境変数 `NOTIFY_HOST`(default: localhost), `NOTIFY_PORT`(default: 23000) で接続先を変更可能。
 
 ## 開発ガイドライン
 
@@ -130,9 +165,12 @@ Phase 4: 美観と規約統一
 
 ## 重要な制約事項
 
+- **backend は Zod v4 使用**: v3 と API が異なる(`z.record` の引数形式等に注意)
 - **TypeScript strict モード必須**: Hono RPC に必要
 - **CSS ファイルは Biome 対象外**: Tailwind ディレクティブとの互換性のため
 - **shadcn/ui は apps/frontend で実行**: ルートでは正しく動作しない
+- **`data/` は gitignore 対象**: `**/data/*.json` がignore されるため、テスト用JSONを配置しないこと
+- **pre-commit フック(Lefthook)**: コミット時に Biome が自動実行され、修正が自動ステージングされる
 
 ## ドキュメント
 

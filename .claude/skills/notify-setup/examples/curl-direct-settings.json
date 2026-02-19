@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl -sf -X POST http://localhost:23000/api/notify -H 'Content-Type: application/json' -d \"{\\\"title\\\":\\\"$(basename \"$CLAUDE_PROJECT_DIR\")\\\",\\\"message\\\":\\\"Task completed\\\",\\\"category\\\":\\\"info\\\",\\\"metadata\\\":{\\\"project\\\":\\\"$CLAUDE_PROJECT_DIR\\\"}}\""
+          }
+        ]
+      }
+    ]
+  }
+}

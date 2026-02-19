@@ -9,12 +9,12 @@
 #
 # Environment variables:
 #   NOTIFY_HOST  - Server host (default: localhost)
-#   NOTIFY_PORT  - Server port (default: 3000)
+#   NOTIFY_PORT  - Server port (default: 23000)
 
 set -euo pipefail
 
 NOTIFY_HOST="${NOTIFY_HOST:-localhost}"
-NOTIFY_PORT="${NOTIFY_PORT:-3000}"
+NOTIFY_PORT="${NOTIFY_PORT:-23000}"
 NOTIFY_URL="http://${NOTIFY_HOST}:${NOTIFY_PORT}/api/notify"
 
 TITLE="${1:-Notification}"

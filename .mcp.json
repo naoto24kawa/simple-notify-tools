@@ -1,15 +1,8 @@
 {
   "mcpServers": {
-    "mcp-rag": {
-      "command": "uv",
-      "args": [
-        "run",
-        "--directory",
-        "/Users/nishikawa/projects/naoto24kawa/mcp-rag-server",
-        "python",
-        "-m",
-        "src.main"
-      ]
+    "tmux": {
+      "command": "npx",
+      "args": ["-y", "tmux-mcp"]
     }
   }
 }

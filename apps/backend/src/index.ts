@@ -1,5 +1,6 @@
-import { serve } from "@hono/node-server";
+import { join } from "node:path";
 import { Hono } from "hono";
+import { serveStatic } from "hono/bun";
 import { cors } from "hono/cors";
 import { createEventsRoute } from "./routes/events";
 import { createNotificationRoutes } from "./routes/notifications";
@@ -24,13 +25,29 @@ app.route("/", notificationApp);
 const eventsApp = createEventsRoute(subscribe);
 app.route("/", eventsApp);
 
+// Serve frontend static files
+const frontendDist = join(import.meta.dir, "../../frontend/dist");
+
+app.use("/assets/*", serveStatic({ root: frontendDist }));
+app.use("/favicon*", serveStatic({ root: frontendDist }));
+
+// SPA fallback
+app.get("*", async (c) => {
+  const file = Bun.file(join(frontendDist, "index.html"));
+  if (await file.exists()) {
+    return c.html(await file.text());
+  }
+  return c.text("Frontend not built. Run: bun run build", 503);
+});
+
 // AppType for Hono RPC
 export type AppType = typeof app;
 
-const port = Number(process.env.PORT) || 3000;
+const port = Number(process.env.PORT) || 23000;
 
-serve({ fetch: app.fetch, port }, (info) => {
-  console.log(`Notification server running at http://localhost:${info.port}`);
-});
+console.log(`Starting server on port ${port}...`);
 
-export default app;
+export default {
+  port,
+  fetch: app.fetch,
+};

@@ -18,7 +18,7 @@ bun run dev
 ./scripts/notify.sh "Hello" "My first notification"
 ```
 
-サーバー: http://localhost:3000
+サーバー: http://localhost:23000
 フロントエンド: http://localhost:5173
 
 ## 使い方
@@ -41,9 +41,9 @@ bun run dev
 | 変数 | デフォルト | 説明 |
 |------|----------|------|
 | `NOTIFY_HOST` | `localhost` | 通知サーバーのホスト |
-| `NOTIFY_PORT` | `3000` | 通知サーバーのポート |
-| `PORT` | `3000` | バックエンドサーバーのポート |
-| `VITE_API_URL` | `http://localhost:3000` | フロントエンドのAPI接続先 |
+| `NOTIFY_PORT` | `23000` | 通知サーバーのポート |
+| `PORT` | `23000` | バックエンドサーバーのポート |
+| `VITE_API_URL` | `http://localhost:23000` | フロントエンドのAPI接続先 |
 
 ### Claude Code Hooks 設定例
 
@@ -82,7 +82,7 @@ bun run dev
 
 | カテゴリ | 技術 |
 |---------|------|
-| バックエンド | Hono + @hono/node-server (Bun) |
+| バックエンド | Hono + Bun |
 | フロントエンド | React 19 + Vite + Tailwind CSS 4 + shadcn/ui |
 | リアルタイム通信 | Server-Sent Events (SSE) |
 | データ永続化 | JSON ファイル (`data/notifications.json`) |
@@ -93,7 +93,7 @@ bun run dev
 
 ```bash
 bun run dev              # フロントエンド開発サーバー (:5173)
-bun run dev:backend      # バックエンド開発サーバー (:3000)
+bun run dev:backend      # バックエンド開発サーバー (:23000)
 bun run lint             # Biome lint
 bun run lint:fix         # 自動修正
 cd apps/backend && bun test  # バックエンドテスト
