@@ -52,20 +52,14 @@ Fired when Claude generates an internal notification (permission prompts, idle a
 | `title` | string (optional) | Notification title |
 | `notification_type` | string | One of: `permission_prompt`, `idle_prompt`, `auth_success`, `elicitation_dialog` |
 
-```bash
-# Extract notification message
-MSG=$(cat - | jq -r '.message // empty')
-TITLE=$(cat - | jq -r '.title // empty')
-TYPE=$(cat - | jq -r '.notification_type // empty')
-```
-
-**Important**: Use `cat -` once and store in a variable, or use a single jq expression:
+**Important**: stdin can only be read once. Store in a variable first:
 
 ```bash
-# Correct: read stdin once
+# Correct: read stdin once, then extract fields
 INPUT=$(cat -)
-MSG=$(echo "$INPUT" | jq -r '.message // empty')
-TITLE=$(echo "$INPUT" | jq -r '.title // empty')
+MSG=$(printf '%s' "$INPUT" | jq -r '.message // empty')
+TITLE=$(printf '%s' "$INPUT" | jq -r '.title // empty')
+TYPE=$(printf '%s' "$INPUT" | jq -r '.notification_type // empty')
 ```
 
 ### PreToolUse

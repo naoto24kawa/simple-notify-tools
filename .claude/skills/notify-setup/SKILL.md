@@ -64,7 +64,7 @@ INPUT=$(cat -) && LAST_MSG=$(printf '%s' "$INPUT" | jq -r '.last_assistant_messa
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat -) && LAST_MSG=$(echo \"$INPUT\" | jq -r '.last_assistant_message // \"Task completed\"' | head -c 200) && <NOTIFY_SH_PATH> \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"$LAST_MSG\""
+            "command": "INPUT=$(cat -) && LAST_MSG=$(printf '%s' \"$INPUT\" | jq -r '.last_assistant_message // \"Task completed\"' 2>/dev/null | tr -d '\\000-\\037' | head -c 200) && <NOTIFY_SH_PATH> \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"${LAST_MSG:-Task completed}\""
           }
         ]
       }
