@@ -110,7 +110,7 @@ Environment variables for notify.sh:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NOTIFY_HOST` | localhost | Server hostname or IP |
-| `NOTIFY_PORT` | 3000 | Server port |
+| `NOTIFY_PORT` | 23000 | Server port |
 
 ## Available Hook Events
 
