@@ -33,16 +33,7 @@ Default host is `localhost`. For LAN access, use the server machine's IP address
 | **notify.sh** (Recommended) | Cleaner config, environment variable support, error handling | Requires path to simple-notify-tools |
 | **curl direct** | No external dependency | Longer command, inline JSON escaping |
 
-### 3. Choose Scope
-
-| Scope | File | Effect |
-|-------|------|--------|
-| Per-project | `<project>/.claude/settings.json` | Only this project sends notifications |
-| Global | `~/.claude/settings.json` | All projects send notifications |
-
-The hook uses `$(basename "$CLAUDE_PROJECT_DIR")` as the notification title, so each project is identifiable even with a single global hook.
-
-### 4. Add Hook Configuration
+### 3. Add Hook Configuration
 
 #### Method A: notify.sh (Recommended)
 
@@ -134,9 +125,8 @@ For detailed per-event stdin fields and patterns, consult `references/hook-event
 
 1. Verify server is running: `curl -sf http://localhost:23000/api/health`
 2. Choose integration method (notify.sh or curl)
-3. Choose scope (global or per-project)
-4. Add hook to `.claude/settings.json`
-5. Test: trigger a `Stop` event and check the dashboard
+3. Add hook to `<project>/.claude/settings.json`
+4. Test: trigger a `Stop` event and check the dashboard
 
 ## Additional Resources
 
@@ -148,7 +138,6 @@ For detailed per-event stdin fields and patterns, consult `references/hook-event
 ### Example Files
 
 Working hook configurations in `examples/`:
-- **`per-project-settings.json`** - Per-project hook using notify.sh (place at `<project>/.claude/settings.json`)
-- **`global-settings.json`** - Global hook with multiple events (place at `~/.claude/settings.json`)
-- **`curl-direct-settings.json`** - Hook using curl directly, no dependency (place at either location)
+- **`per-project-settings.json`** - Hook using notify.sh (place at `<project>/.claude/settings.json`)
+- **`curl-direct-settings.json`** - Hook using curl directly, no dependency
 - **`lan-access-settings.json`** - LAN access with NOTIFY_HOST
