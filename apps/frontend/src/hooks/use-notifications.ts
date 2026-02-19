@@ -7,6 +7,7 @@ const API_BASE = import.meta.env.VITE_API_URL || "";
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [serverHostname, setServerHostname] = useState<string | null>(null);
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -18,6 +19,13 @@ export function useNotifications() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/health`)
+      .then((r) => r.json())
+      .then((d) => setServerHostname(d.hostname ?? null))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -67,7 +75,16 @@ export function useNotifications() {
     }
   }, []);
 
-  return { notifications, unreadCount, loading, connected, markAsRead, remove, focusWindow };
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    connected,
+    markAsRead,
+    remove,
+    focusWindow,
+    serverHostname,
+  };
 }
 
 function showDesktopNotification(notification: Notification) {

@@ -12,6 +12,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/naoto24kawa/projects/naoto24kawa/simple-notify-tools/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\" \"info\" \"{\\\"project\\\":\\\"$CLAUDE_PROJECT_DIR\\\"}\""
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {
@@ -25,7 +36,8 @@
     "claude-md-management@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true
+    "ralph-loop@claude-plugins-official": true,
+    "remote-chrome@naoto24kawa-claude-plugins": true
   },
   "extraKnownMarketplaces": {
     "naoto24kawa": {

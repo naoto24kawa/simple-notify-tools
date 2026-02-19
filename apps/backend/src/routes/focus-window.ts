@@ -11,7 +11,15 @@ const focusWindowSchema = z.object({
     .refine((v) => !DANGEROUS_CHARS.test(v), "Invalid characters in path"),
 });
 
-export function createFocusWindowRoute() {
+const CODE_CMD = process.env.CODE_CMD || "code-insiders";
+
+type SpawnFn = (cmd: string, dir: string) => void;
+
+const defaultSpawn: SpawnFn = (cmd, dir) => {
+  Bun.spawn([cmd, "-r", dir], { stdio: ["ignore", "ignore", "ignore"] });
+};
+
+export function createFocusWindowRoute(spawn: SpawnFn = defaultSpawn) {
   const app = new Hono().post("/api/focus-window", async (c) => {
     let body: unknown;
     try {
@@ -32,12 +40,9 @@ export function createFocusWindowRoute() {
     }
 
     try {
-      Bun.spawn(["code", projectDir], {
-        stdio: ["ignore", "ignore", "ignore"],
-      });
+      spawn(CODE_CMD, projectDir);
     } catch {
-      // Best-effort: code command may not be available in all environments
-      console.warn(`Failed to spawn "code" for ${projectDir}`);
+      console.warn(`Failed to spawn "${CODE_CMD}" for ${projectDir}`);
     }
 
     return c.json({ success: true });

@@ -4,8 +4,16 @@ import { NotificationBadge } from "./notification-badge";
 import { NotificationList } from "./notification-list";
 
 export function App() {
-  const { notifications, unreadCount, loading, connected, markAsRead, remove, focusWindow } =
-    useNotifications();
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    connected,
+    markAsRead,
+    remove,
+    focusWindow,
+    serverHostname,
+  } = useNotifications();
 
   useEffect(() => {
     if (Notification.permission === "default") {
@@ -32,6 +40,7 @@ export function App() {
             onMarkAsRead={markAsRead}
             onRemove={remove}
             onFocusWindow={focusWindow}
+            serverHostname={serverHostname}
           />
         )}
       </main>

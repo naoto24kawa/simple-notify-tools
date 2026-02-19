@@ -1,5 +1,4 @@
 import type { Notification } from "@repo/types/notification";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { NotificationCard } from "./notification-card";
 
 interface NotificationListProps {
@@ -7,6 +6,7 @@ interface NotificationListProps {
   onMarkAsRead: (id: string) => void;
   onRemove: (id: string) => void;
   onFocusWindow?: (projectDir: string) => void;
+  serverHostname?: string | null;
 }
 
 export function NotificationList({
@@ -14,6 +14,7 @@ export function NotificationList({
   onMarkAsRead,
   onRemove,
   onFocusWindow,
+  serverHostname,
 }: NotificationListProps) {
   if (notifications.length === 0) {
     return (
@@ -24,8 +25,8 @@ export function NotificationList({
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)]">
-      <div className="space-y-2 pr-4">
+    <div className="h-[calc(100vh-12rem)] overflow-y-auto">
+      <div className="space-y-2">
         {notifications.map((notification) => (
           <NotificationCard
             key={notification.id}
@@ -33,9 +34,10 @@ export function NotificationList({
             onMarkAsRead={onMarkAsRead}
             onRemove={onRemove}
             onFocusWindow={onFocusWindow}
+            serverHostname={serverHostname}
           />
         ))}
       </div>
-    </ScrollArea>
+    </div>
   );
 }

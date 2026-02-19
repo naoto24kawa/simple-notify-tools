@@ -1,8 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { createFocusWindowRoute } from "./focus-window";
 
+const noopSpawn = () => {};
+
 describe("Focus Window Route", () => {
-  const { app } = createFocusWindowRoute();
+  const { app } = createFocusWindowRoute(noopSpawn);
 
   test("POST /api/focus-window returns 400 for invalid JSON body", async () => {
     const res = await app.request("/api/focus-window", {
