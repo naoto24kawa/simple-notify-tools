@@ -2,6 +2,17 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "enableAllProjectMcpServers": true,
   "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat -) && LAST_MSG=$(echo \"$INPUT\" | jq -r '.last_assistant_message // \"Task completed\"' | head -c 200) && /Users/nishikawa/projects/naoto24kawa/simple-notify-tools/.claude/skills/notify-setup/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"$LAST_MSG\""
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Write|Edit",

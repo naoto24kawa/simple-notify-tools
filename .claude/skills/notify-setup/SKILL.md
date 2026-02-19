@@ -3,42 +3,58 @@ name: notify-setup
 description: This skill should be used when the user asks to "setup notifications", "integrate notify", "add notification hooks", "connect to notification server", "notify setup", "configure notify hooks", "add Stop hook", "セットアップ", "通知の導入", "他のプロジェクトに導入", "通知を設定", "hookを追加", or needs to configure Claude Code hooks to send notifications to the simple-notify-tools server.
 ---
 
-# Notification Setup Guide
+# Notification Setup Skill
 
-Integrate the simple-notify-tools notification server into any Claude Code project via hooks.
+Claude Code の Stop hook を設定し、タスク完了時に通知サーバーへ通知を送る。
 
-## Prerequisites
+## Skill Base Directory
 
-- The notification server (simple-notify-tools) is running
-- The target project uses Claude Code
+This skill bundles `scripts/notify.sh`. Resolve the absolute path from this skill's base directory.
 
-## Quick Start
+```
+<SKILL_BASE_DIR>/scripts/notify.sh
+```
 
-### 1. Verify Server
+## Execution Steps
 
-Confirm the notification server is reachable:
+Claude MUST execute these steps in order:
+
+### Step 1: Verify Server
 
 ```bash
 curl -sf http://<HOST>:23000/api/health
 ```
 
-Expected response: `{"status":"ok","timestamp":"..."}`
+- Default HOST is `localhost`.
+- If the server is not running, ask the user to start it or provide the host/port.
 
-Default host is `localhost`. For LAN access, use the server machine's IP address.
+### Step 2: Resolve notify.sh Path
 
-### 2. Choose Integration Method
+The script is bundled at `<SKILL_BASE_DIR>/scripts/notify.sh`.
+Use the absolute path provided by "Base directory for this skill" context.
 
-| Method | Pros | Cons |
-|--------|------|------|
-| **notify.sh** (Recommended) | Cleaner config, environment variable support, error handling | Requires path to simple-notify-tools |
-| **curl direct** | No external dependency | Longer command, inline JSON escaping |
+Example: If base directory is `/home/user/simple-notify-tools/.claude/skills/notify-setup`, then:
+```
+/home/user/simple-notify-tools/.claude/skills/notify-setup/scripts/notify.sh
+```
 
-### 3. Add Hook Configuration
+Verify the script exists and is executable:
+```bash
+test -x <SKILL_BASE_DIR>/scripts/notify.sh && echo "OK"
+```
 
-#### Method A: notify.sh (Recommended)
+### Step 3: Write Hook to settings.json
 
-Add a `Stop` hook to `.claude/settings.json`:
+Add a `Stop` hook to `<TARGET_PROJECT>/.claude/settings.json`.
 
+The hook reads `last_assistant_message` from stdin and sends it as the notification body (first 200 chars).
+
+**Hook command template:**
+```
+INPUT=$(cat -) && LAST_MSG=$(echo "$INPUT" | jq -r '.last_assistant_message // "Task completed"' | head -c 200) && <NOTIFY_SH_PATH> "$(basename "$CLAUDE_PROJECT_DIR")" "$LAST_MSG"
+```
+
+**Full settings.json snippet:**
 ```json
 {
   "hooks": {
@@ -48,7 +64,7 @@ Add a `Stop` hook to `.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "<NOTIFY_TOOLS_DIR>/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\""
+            "command": "INPUT=$(cat -) && LAST_MSG=$(echo \"$INPUT\" | jq -r '.last_assistant_message // \"Task completed\"' | head -c 200) && <NOTIFY_SH_PATH> \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"$LAST_MSG\""
           }
         ]
       }
@@ -57,46 +73,28 @@ Add a `Stop` hook to `.claude/settings.json`:
 }
 ```
 
-Replace `<NOTIFY_TOOLS_DIR>` with the absolute path to the simple-notify-tools directory (e.g., `/home/user/simple-notify-tools`).
+Replace `<NOTIFY_SH_PATH>` with the absolute path resolved in Step 2.
 
-#### Method B: curl Direct (No dependency)
+**Important**: If `.claude/settings.json` already has hooks, merge the Stop hook into the existing `hooks` object. Do not overwrite other hooks.
 
-Add a `Stop` hook using curl directly:
+### Step 4: Test
 
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -sf -X POST http://localhost:23000/api/notify -H 'Content-Type: application/json' -d \"{\\\"title\\\":\\\"$(basename \"$CLAUDE_PROJECT_DIR\")\\\",\\\"message\\\":\\\"Task completed\\\"}\""
-          }
-        ]
-      }
-    ]
-  }
-}
+Send a test notification:
+```bash
+<NOTIFY_SH_PATH> "$(basename "$PWD")" "Setup test - notification working"
 ```
 
-### 4. Verify
-
-Trigger a `Stop` event and check the notification dashboard at `http://<HOST>:23000`.
+Confirm the notification appears on the dashboard at `http://<HOST>:23000`.
 
 ## LAN Access
 
-For notifications across machines, set `NOTIFY_HOST` to the server's IP:
+For notifications across machines, prepend `NOTIFY_HOST=<IP>` to the hook command:
 
-```json
-{
-  "type": "command",
-  "command": "NOTIFY_HOST=192.168.1.100 <NOTIFY_TOOLS_DIR>/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"Task completed\""
-}
+```
+INPUT=$(cat -) && LAST_MSG=$(echo "$INPUT" | jq -r '.last_assistant_message // "Task completed"' | head -c 200) && NOTIFY_HOST=192.168.1.100 <NOTIFY_SH_PATH> "$(basename "$CLAUDE_PROJECT_DIR")" "$LAST_MSG"
 ```
 
-Environment variables for notify.sh:
+### notify.sh Environment Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -112,32 +110,12 @@ Environment variables for notify.sh:
 | `PreToolUse` | Notify when waiting for user confirmation | `tool_name`, `tool_input` |
 | `PostToolUse` | Notify on long-running tool completion | `tool_name`, `tool_response` |
 
-**Important**: Hook event data is passed via **stdin as JSON**, not environment variables. Only `$CLAUDE_PROJECT_DIR` is available as an env var. To read event data, parse stdin with `jq`:
+Hook event data is passed via **stdin as JSON**. Only `$CLAUDE_PROJECT_DIR` is available as an env var.
 
-```bash
-# Example: extract message from Notification event
-MSG=$(cat - | jq -r '.message // empty')
-```
-
-For detailed per-event stdin fields and patterns, consult `references/hook-events.md`.
-
-## Setup Checklist
-
-1. Verify server is running: `curl -sf http://localhost:23000/api/health`
-2. Choose integration method (notify.sh or curl)
-3. Add hook to `<project>/.claude/settings.json`
-4. Test: trigger a `Stop` event and check the dashboard
+For detailed per-event stdin fields, see `references/hook-events.md`.
 
 ## Additional Resources
 
-### Reference Files
-
-- **`references/api-reference.md`** - Full API endpoints, request/response formats, notify.sh CLI reference
-- **`references/hook-events.md`** - Detailed per-event stdin JSON fields, parsing patterns, integration examples
-
-### Example Files
-
-Working hook configurations in `examples/`:
-- **`per-project-settings.json`** - Hook using notify.sh (place at `<project>/.claude/settings.json`)
-- **`curl-direct-settings.json`** - Hook using curl directly, no dependency
-- **`lan-access-settings.json`** - LAN access with NOTIFY_HOST
+- **`references/api-reference.md`** - API endpoints, request/response formats, notify.sh CLI
+- **`references/hook-events.md`** - Per-event stdin JSON fields and parsing patterns
+- **`examples/`** - Working hook configuration examples
