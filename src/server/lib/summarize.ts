@@ -34,7 +34,7 @@ export async function summarizeMessage(message: string): Promise<string | null> 
     return null;
   }
 
-  const prompt = `Summarize the following notification message in one concise sentence (max 100 chars). Output ONLY the summary, no explanation:\n${message}`;
+  const prompt = `Summarize in under 40 characters. Output ONLY the summary, nothing else:\n${message}`;
 
   const env = { ...process.env };
   delete env.CLAUDECODE;
