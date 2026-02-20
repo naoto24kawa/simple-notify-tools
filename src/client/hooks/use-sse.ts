@@ -23,6 +23,7 @@ export function useSSE({ url, onMessage }: SSEOptions) {
     eventSource.addEventListener("created", handleEvent("created"));
     eventSource.addEventListener("read", handleEvent("read"));
     eventSource.addEventListener("deleted", handleEvent("deleted"));
+    eventSource.addEventListener("updated", handleEvent("updated"));
 
     return () => {
       eventSource.close();

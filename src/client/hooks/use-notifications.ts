@@ -41,6 +41,9 @@ export function useNotifications() {
       } else if (event === "read") {
         const notification: Notification = JSON.parse(data);
         setNotifications((prev) => prev.map((n) => (n.id === notification.id ? notification : n)));
+      } else if (event === "updated") {
+        const notification: Notification = JSON.parse(data);
+        setNotifications((prev) => prev.map((n) => (n.id === notification.id ? notification : n)));
       } else if (event === "deleted") {
         const { id } = JSON.parse(data);
         setNotifications((prev) => prev.filter((n) => n.id !== id));

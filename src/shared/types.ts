@@ -2,6 +2,7 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
+  summary?: string;
   category: string;
   metadata: Record<string, unknown>;
   read: boolean;

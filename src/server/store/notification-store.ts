@@ -46,6 +46,14 @@ export class NotificationStore {
     return notification;
   }
 
+  update(id: string, partial: Partial<Pick<Notification, "summary">>): Notification | null {
+    const notification = this.notifications.find((n) => n.id === id);
+    if (!notification) return null;
+    Object.assign(notification, partial);
+    this.save();
+    return notification;
+  }
+
   remove(id: string): boolean {
     const index = this.notifications.findIndex((n) => n.id === id);
     if (index === -1) return false;

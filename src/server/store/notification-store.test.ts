@@ -83,6 +83,25 @@ describe("NotificationStore", () => {
     expect(store.getAll()).toEqual([]);
   });
 
+  test("update sets summary on a notification", () => {
+    const notification = store.add({ title: "Test", message: "long message" });
+    const updated = store.update(notification.id, { summary: "short" });
+    expect(updated?.summary).toBe("short");
+  });
+
+  test("update returns null for non-existent id", () => {
+    const result = store.update("non-existent", { summary: "short" });
+    expect(result).toBeNull();
+  });
+
+  test("update persists to file", () => {
+    const notification = store.add({ title: "Test", message: "msg" });
+    store.update(notification.id, { summary: "summarized" });
+    const store2 = new NotificationStore(TEST_FILE);
+    const all = store2.getAll();
+    expect(all[0]?.summary).toBe("summarized");
+  });
+
   test("add with custom category and metadata", () => {
     const notification = store.add({
       title: "Custom",

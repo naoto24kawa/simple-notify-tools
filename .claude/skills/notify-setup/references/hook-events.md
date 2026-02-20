@@ -92,13 +92,13 @@ Fired after a tool finishes execution.
 
 ### How notify.sh Handles Each Event
 
-| Event | Behavior |
-|-------|----------|
-| **Stop** | Extracts `last_assistant_message`, sanitizes (200 char limit), sends as notification |
-| **Notification** | Extracts `title` and `message`, combines them, sends as notification |
-| **PreToolUse** | Logs the event, exits without sending notification |
-| **PostToolUse** | Logs the event, exits without sending notification |
-| **Unknown** | Sends fallback message "Hook event: <event_name>" |
+| Event | Behavior | Category |
+|-------|----------|----------|
+| **Stop** | Extracts `last_assistant_message`, sanitizes (200 char limit), sends as notification | `complete` |
+| **Notification** | Extracts `title` and `message`, combines them, sends as notification | `action_required` |
+| **PreToolUse** | Logs the event, exits without sending notification | - |
+| **PostToolUse** | Logs the event, exits without sending notification | - |
+| **Unknown** | Sends fallback message "Hook event: <event_name>" | `info` |
 
 ### LAN Access
 

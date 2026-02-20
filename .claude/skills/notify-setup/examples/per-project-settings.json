@@ -10,6 +10,17 @@
           }
         ]
       }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<NOTIFY_SH_PATH>"
+          }
+        ]
+      }
     ]
   }
 }

@@ -1,11 +1,11 @@
 ---
 name: notify-setup
-description: This skill should be used when the user asks to "setup notifications", "integrate notify", "add notification hooks", "connect to notification server", "notify setup", "configure notify hooks", "add Stop hook", "セットアップ", "通知の導入", "他のプロジェクトに導入", "通知を設定", "hookを追加", or needs to configure Claude Code hooks to send notifications to the simple-notify-tools server.
+description: This skill should be used when the user asks to "setup notifications", "integrate notify", "add notification hooks", "connect to notification server", "notify setup", "configure notify hooks", "add Stop hook", "add Notification hook", "セットアップ", "通知の導入", "他のプロジェクトに導入", "通知を設定", "hookを追加", "入力待ち通知", "ask通知", or needs to configure Claude Code hooks to send notifications to the simple-notify-tools server.
 ---
 
 # Notification Setup Skill
 
-Claude Code の Stop hook を設定し、タスク完了時に通知サーバーへ通知を送る。
+Claude Code の hook を設定し、通知サーバーへ通知を送る。
 
 ## Skill Base Directory
 
@@ -26,11 +26,14 @@ Supported events:
 
 ## Execution Steps
 
-Claude MUST execute these steps in order:
+Execute these steps in order:
 
-### Step 1: Verify Server
+### Step 1: Verify Prerequisites
+
+**Required tools:** `curl`, `jq` (notify.sh depends on jq for JSON parsing)
 
 ```bash
+command -v jq >/dev/null 2>&1 && echo "jq: OK" || echo "jq: MISSING - install with 'brew install jq' or 'apt install jq'"
 curl -sf http://<HOST>:23000/api/health
 ```
 
@@ -52,9 +55,25 @@ Verify the script exists and is executable:
 test -x <SKILL_BASE_DIR>/scripts/notify.sh && echo "OK"
 ```
 
-### Step 3: Write Hook to settings.json
+### Step 3: Ask Which Hooks to Enable
 
-Add a `Stop` hook to `<TARGET_PROJECT>/.claude/settings.json`.
+Ask the user which hooks to enable via AskUserQuestion:
+
+| Hook | Description |
+|------|-------------|
+| **Stop** (default) | タスク完了時に通知 |
+| **Notification** | 入力待ち(permission prompt, idle, AskUserQuestion)時に通知 |
+
+**Question example:**
+- "どのタイミングで通知を受け取りたいですか?"
+- Options:
+  1. "Stop のみ (タスク完了時)" - default, most common
+  2. "Stop + Notification (タスク完了 + 入力待ち)" - recommended for unattended operation
+  3. "Notification のみ (入力待ちのみ)" - for users who only care about prompts
+
+### Step 4: Write Hook to settings.json
+
+Add selected hooks to `<TARGET_PROJECT>/.claude/settings.json`.
 
 **Hook command template:**
 ```
@@ -63,38 +82,42 @@ Add a `Stop` hook to `<TARGET_PROJECT>/.claude/settings.json`.
 
 That's it. `notify.sh` reads stdin JSON automatically and extracts the message.
 
-**Full settings.json snippet:**
+**Single hook block pattern** (same structure for each event type):
 ```json
 {
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "<NOTIFY_SH_PATH>"
-          }
-        ]
-      }
-    ]
-  }
+  "matcher": "",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "<NOTIFY_SH_PATH>"
+    }
+  ]
 }
 ```
 
-Replace `<NOTIFY_SH_PATH>` with the absolute path resolved in Step 2.
+Add this block under each selected event key (`Stop`, `Notification`) in the `hooks` object. Replace `<NOTIFY_SH_PATH>` with the absolute path resolved in Step 2.
 
-**Important**: If `.claude/settings.json` already has hooks, merge the Stop hook into the existing `hooks` object. Do not overwrite other hooks.
+See `examples/per-project-settings.json` for a complete Stop + Notification configuration. For LAN access, see `examples/lan-access-settings.json`.
 
-### Step 4: Test
+**Important**: If `.claude/settings.json` already has hooks, merge the new hooks into the existing `hooks` object. Do not overwrite other hooks.
 
-Send a test notification:
+### Step 5: Test
+
+Send test notifications for each enabled hook:
+
+**Stop event:**
 ```bash
 echo '{"hook_event_name":"Stop","last_assistant_message":"Setup test - notification working"}' | \
   CLAUDE_PROJECT_DIR="$PWD" <NOTIFY_SH_PATH>
 ```
 
-Confirm the notification appears on the dashboard at `http://<HOST>:23000`.
+**Notification event (if enabled):**
+```bash
+echo '{"hook_event_name":"Notification","message":"Permission needed","title":"Tool approval","notification_type":"permission_prompt"}' | \
+  CLAUDE_PROJECT_DIR="$PWD" <NOTIFY_SH_PATH>
+```
+
+Confirm the notifications appear on the dashboard at `http://<HOST>:23000`.
 
 ## LAN Access
 
@@ -129,4 +152,5 @@ For detailed per-event stdin fields, see `references/hook-events.md`.
 
 - **`references/api-reference.md`** - API endpoints, request/response formats, notify.sh reference
 - **`references/hook-events.md`** - Per-event stdin JSON fields and integration patterns
+- **`references/ai-summarization.md`** - AI message summarization setup (`ANTHROPIC_API_KEY`)
 - **`examples/`** - Working hook configuration examples

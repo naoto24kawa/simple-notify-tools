@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { isSummarizationEnabled, summarizeMessage } from "../lib/summarize";
 import { NotificationStore } from "../store/notification-store";
 
 const createNotificationSchema = z.object({
@@ -9,7 +10,10 @@ const createNotificationSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional(),
 });
 
-export type NotificationListener = (event: "created" | "read" | "deleted", data: unknown) => void;
+export type NotificationListener = (
+  event: "created" | "read" | "deleted" | "updated",
+  data: unknown,
+) => void;
 
 interface NotificationRoutesOptions {
   onNotify?: (notification: {
@@ -45,6 +49,18 @@ export function createNotificationRoutes(filePath?: string, options?: Notificati
         options?.onNotify?.(notification);
       } catch (err) {
         console.warn("[notify] onNotify callback error:", err);
+      }
+      if (isSummarizationEnabled()) {
+        void summarizeMessage(notification.message).then((summary) => {
+          if (summary) {
+            const updated = store.update(notification.id, { summary });
+            if (updated) {
+              for (const listener of listeners) {
+                listener("updated", updated);
+              }
+            }
+          }
+        });
       }
       return c.json(notification, 201);
     })

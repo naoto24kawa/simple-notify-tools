@@ -34,6 +34,9 @@ export function NotificationCard({
           {notification.category}
         </Badge>
       </div>
+      {notification.summary && (
+        <p className="text-xs text-primary/80 italic mb-1">{notification.summary}</p>
+      )}
       <p className="text-sm text-muted-foreground">{notification.message}</p>
       {Object.keys(notification.metadata).length > 0 && (
         <pre className="mt-2 text-xs text-muted-foreground bg-muted p-2 rounded overflow-x-auto">
