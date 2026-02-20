@@ -8,7 +8,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat -) && LAST_MSG=$(printf '%s' \"$INPUT\" | jq -r '.last_assistant_message // \"Task completed\"' 2>/dev/null | tr -d '\\000-\\037' | head -c 200) && /Users/nishikawa/projects/naoto24kawa/simple-notify-tools/.claude/skills/notify-setup/scripts/notify.sh \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"${LAST_MSG:-Task completed}\""
+            "command": "/Users/nishikawa/projects/naoto24kawa/simple-notify-tools/.claude/skills/notify-setup/scripts/notify.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/nishikawa/projects/naoto24kawa/simple-notify-tools/.claude/skills/notify-setup/scripts/notify.sh"
           }
         ]
       }

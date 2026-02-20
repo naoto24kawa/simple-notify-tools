@@ -15,6 +15,15 @@ This skill bundles `scripts/notify.sh`. Resolve the absolute path from this skil
 <SKILL_BASE_DIR>/scripts/notify.sh
 ```
 
+## How notify.sh Works
+
+`notify.sh` is a hook-dedicated script. It reads stdin JSON from Claude Code hook events, extracts the relevant message, and sends a notification to the server. No arguments are needed.
+
+Supported events:
+- **Stop** - extracts `last_assistant_message` (most common)
+- **Notification** - extracts `message` and `title`
+- **PreToolUse / PostToolUse** - logged only, no notification sent
+
 ## Execution Steps
 
 Claude MUST execute these steps in order:
@@ -47,12 +56,12 @@ test -x <SKILL_BASE_DIR>/scripts/notify.sh && echo "OK"
 
 Add a `Stop` hook to `<TARGET_PROJECT>/.claude/settings.json`.
 
-The hook reads `last_assistant_message` from stdin and sends it as the notification body (first 200 chars).
-
 **Hook command template:**
 ```
-INPUT=$(cat -) && LAST_MSG=$(printf '%s' "$INPUT" | jq -r '.last_assistant_message // "Task completed"' 2>/dev/null | tr -d '\\000-\\037' | head -c 200) && <NOTIFY_SH_PATH> "$(basename "$CLAUDE_PROJECT_DIR")" "${LAST_MSG:-Task completed}"
+<NOTIFY_SH_PATH>
 ```
+
+That's it. `notify.sh` reads stdin JSON automatically and extracts the message.
 
 **Full settings.json snippet:**
 ```json
@@ -64,7 +73,7 @@ INPUT=$(cat -) && LAST_MSG=$(printf '%s' "$INPUT" | jq -r '.last_assistant_messa
         "hooks": [
           {
             "type": "command",
-            "command": "INPUT=$(cat -) && LAST_MSG=$(printf '%s' \"$INPUT\" | jq -r '.last_assistant_message // \"Task completed\"' 2>/dev/null | tr -d '\\000-\\037' | head -c 200) && <NOTIFY_SH_PATH> \"$(basename \"$CLAUDE_PROJECT_DIR\")\" \"${LAST_MSG:-Task completed}\""
+            "command": "<NOTIFY_SH_PATH>"
           }
         ]
       }
@@ -81,7 +90,8 @@ Replace `<NOTIFY_SH_PATH>` with the absolute path resolved in Step 2.
 
 Send a test notification:
 ```bash
-<NOTIFY_SH_PATH> "$(basename "$PWD")" "Setup test - notification working"
+echo '{"hook_event_name":"Stop","last_assistant_message":"Setup test - notification working"}' | \
+  CLAUDE_PROJECT_DIR="$PWD" <NOTIFY_SH_PATH>
 ```
 
 Confirm the notification appears on the dashboard at `http://<HOST>:23000`.
@@ -91,7 +101,7 @@ Confirm the notification appears on the dashboard at `http://<HOST>:23000`.
 For notifications across machines, prepend `NOTIFY_HOST=<IP>` to the hook command:
 
 ```
-INPUT=$(cat -) && LAST_MSG=$(printf '%s' "$INPUT" | jq -r '.last_assistant_message // "Task completed"' 2>/dev/null | tr -d '\\000-\\037' | head -c 200) && NOTIFY_HOST=192.168.1.100 <NOTIFY_SH_PATH> "$(basename "$CLAUDE_PROJECT_DIR")" "${LAST_MSG:-Task completed}"
+NOTIFY_HOST=192.168.1.100 <NOTIFY_SH_PATH>
 ```
 
 ### notify.sh Environment Variables
@@ -100,6 +110,7 @@ INPUT=$(cat -) && LAST_MSG=$(printf '%s' "$INPUT" | jq -r '.last_assistant_messa
 |----------|---------|-------------|
 | `NOTIFY_HOST` | localhost | Server hostname or IP |
 | `NOTIFY_PORT` | 23000 | Server port |
+| `NOTIFY_LOG` | /tmp/notify-hook.log | Log file path |
 
 ## Available Hook Events
 
@@ -107,8 +118,8 @@ INPUT=$(cat -) && LAST_MSG=$(printf '%s' "$INPUT" | jq -r '.last_assistant_messa
 |-------|----------|------------|
 | `Stop` | Task completion notification (most common) | `last_assistant_message` |
 | `Notification` | Claude's internal notification messages | `message`, `title`, `notification_type` |
-| `PreToolUse` | Notify when waiting for user confirmation | `tool_name`, `tool_input` |
-| `PostToolUse` | Notify on long-running tool completion | `tool_name`, `tool_response` |
+| `PreToolUse` | Logged only (no notification) | `tool_name`, `tool_input` |
+| `PostToolUse` | Logged only (no notification) | `tool_name`, `tool_response` |
 
 Hook event data is passed via **stdin as JSON**. Only `$CLAUDE_PROJECT_DIR` is available as an env var.
 
@@ -116,6 +127,6 @@ For detailed per-event stdin fields, see `references/hook-events.md`.
 
 ## Additional Resources
 
-- **`references/api-reference.md`** - API endpoints, request/response formats, notify.sh CLI
-- **`references/hook-events.md`** - Per-event stdin JSON fields and parsing patterns
+- **`references/api-reference.md`** - API endpoints, request/response formats, notify.sh reference
+- **`references/hook-events.md`** - Per-event stdin JSON fields and integration patterns
 - **`examples/`** - Working hook configuration examples

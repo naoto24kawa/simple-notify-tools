@@ -191,24 +191,29 @@ Health check endpoint.
 }
 ```
 
-## notify.sh CLI Reference
+## notify.sh Hook Script Reference
+
+`notify.sh` is a hook-dedicated script that reads stdin JSON from Claude Code hook events and sends notifications to the server. No arguments are needed.
 
 ### Usage
 
 ```bash
-./scripts/notify.sh "Title" "Message" [category] [metadata_json]
+# As Claude Code hook command (stdin JSON is provided automatically)
+<path>/notify.sh
+
+# LAN access
+NOTIFY_HOST=192.168.1.100 <path>/notify.sh
 ```
 
-### Arguments
+### Supported Hook Events
 
-| Argument | Required | Default | Description |
-|----------|----------|---------|-------------|
-| Title | No | "Notification" | Notification title |
-| Message | Yes | - | Notification body (non-empty) |
-| Category | No | "info" | Category: info, error, deploy, etc. |
-| Metadata | No | `{}` | Arbitrary JSON object |
-
-Note: The `category` default "info" is set by notify.sh. When using curl directly, `category` is optional with no server-side default.
+| Event | Behavior |
+|-------|----------|
+| **Stop** | Extracts `last_assistant_message`, sends as notification body |
+| **Notification** | Extracts `title` and `message`, sends combined notification |
+| **PreToolUse** | Logged only, no notification sent |
+| **PostToolUse** | Logged only, no notification sent |
+| **Unknown** | Sends fallback "Hook event: <event_name>" |
 
 ### Environment Variables
 
@@ -216,19 +221,29 @@ Note: The `category` default "info" is set by notify.sh. When using curl directl
 |----------|---------|-------------|
 | `NOTIFY_HOST` | localhost | Server hostname or IP |
 | `NOTIFY_PORT` | 23000 | Server port |
+| `NOTIFY_LOG` | /tmp/notify-hook.log | Log file path |
+| `CLAUDE_PROJECT_DIR` | (set by Claude Code) | Used as notification title via `basename` |
 
-### Examples
+### Message Processing
+
+1. Reads stdin JSON (provided by Claude Code hook system)
+2. Extracts `hook_event_name` to determine event type
+3. Extracts relevant message field based on event type
+4. Sanitizes: removes control characters, truncates to 200 characters
+5. Sends notification with `basename($CLAUDE_PROJECT_DIR)` as title
+
+### Manual Testing
 
 ```bash
-# Basic notification
-./scripts/notify.sh "Build" "Build finished"
+# Stop event
+echo '{"hook_event_name":"Stop","last_assistant_message":"Build finished"}' | \
+  CLAUDE_PROJECT_DIR=/tmp/my-project ./scripts/notify.sh
 
-# With category
-./scripts/notify.sh "Error" "Test failed" "error"
-
-# With metadata
-./scripts/notify.sh "Deploy" "Deployed to prod" "deploy" '{"env":"prod"}'
+# Notification event
+echo '{"hook_event_name":"Notification","message":"Permission needed","title":"Auth"}' | \
+  CLAUDE_PROJECT_DIR=/tmp/my-project ./scripts/notify.sh
 
 # LAN access
-NOTIFY_HOST=192.168.1.100 ./scripts/notify.sh "Task" "Done" "info"
+echo '{"hook_event_name":"Stop","last_assistant_message":"Done"}' | \
+  CLAUDE_PROJECT_DIR=/tmp/my-project NOTIFY_HOST=192.168.1.100 ./scripts/notify.sh
 ```

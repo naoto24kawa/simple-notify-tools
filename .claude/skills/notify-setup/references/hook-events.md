@@ -37,11 +37,6 @@ Fired when Claude finishes a response turn.
 | `stop_hook_active` | boolean | Whether a Stop hook is already continuing |
 | `last_assistant_message` | string | Claude's final response text |
 
-```bash
-# Extract last message from Stop event
-MSG=$(cat - | jq -r '.last_assistant_message // empty')
-```
-
 ### Notification
 
 Fired when Claude generates an internal notification (permission prompts, idle alerts, etc.).
@@ -52,16 +47,6 @@ Fired when Claude generates an internal notification (permission prompts, idle a
 | `title` | string (optional) | Notification title |
 | `notification_type` | string | One of: `permission_prompt`, `idle_prompt`, `auth_success`, `elicitation_dialog` |
 
-**Important**: stdin can only be read once. Store in a variable first:
-
-```bash
-# Correct: read stdin once, then extract fields
-INPUT=$(cat -)
-MSG=$(printf '%s' "$INPUT" | jq -r '.message // empty')
-TITLE=$(printf '%s' "$INPUT" | jq -r '.title // empty')
-TYPE=$(printf '%s' "$INPUT" | jq -r '.notification_type // empty')
-```
-
 ### PreToolUse
 
 Fired before a tool is executed. Can block tool execution.
@@ -71,11 +56,6 @@ Fired before a tool is executed. Can block tool execution.
 | `tool_name` | string | Tool name (e.g., "Bash", "Write", "Edit") |
 | `tool_input` | object | Tool input parameters |
 | `tool_use_id` | string | Unique tool use ID |
-
-```bash
-# Check which tool is being used
-TOOL=$(cat - | jq -r '.tool_name // empty')
-```
 
 ### PostToolUse
 
@@ -88,49 +68,59 @@ Fired after a tool finishes execution.
 | `tool_response` | string | Tool execution result |
 | `tool_use_id` | string | Unique tool use ID |
 
-```bash
-# Get tool result
-RESULT=$(cat - | jq -r '.tool_response // empty')
+## Integration with notify.sh
+
+`notify.sh` is a hook-dedicated script that handles all stdin parsing internally. Just set it as the hook command:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "<NOTIFY_SH_PATH>"
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
-## Patterns for Notification Integration
+### How notify.sh Handles Each Event
 
-### Stop Hook (Most Common)
+| Event | Behavior |
+|-------|----------|
+| **Stop** | Extracts `last_assistant_message`, sanitizes (200 char limit), sends as notification |
+| **Notification** | Extracts `title` and `message`, combines them, sends as notification |
+| **PreToolUse** | Logs the event, exits without sending notification |
+| **PostToolUse** | Logs the event, exits without sending notification |
+| **Unknown** | Sends fallback message "Hook event: <event_name>" |
 
-Send a notification when Claude finishes a task. No stdin parsing needed for basic use:
+### LAN Access
 
-```bash
-<NOTIFY_TOOLS_DIR>/scripts/notify.sh \
-  "$(basename "$CLAUDE_PROJECT_DIR")" \
-  "Task completed" \
-  "info" \
-  "{\"project\":\"$CLAUDE_PROJECT_DIR\"}"
+For notifications across machines:
+
+```json
+{
+  "command": "NOTIFY_HOST=192.168.1.100 <NOTIFY_SH_PATH>"
+}
 ```
 
-### Notification Hook with stdin Parsing
-
-Forward Claude's internal notifications to the notification server:
+### Manual Testing
 
 ```bash
-MSG=$(cat - | jq -r '.message // empty') && \
-  [ -n "$MSG" ] && \
-  <NOTIFY_TOOLS_DIR>/scripts/notify.sh \
-    "$(basename "$CLAUDE_PROJECT_DIR")" \
-    "$MSG" \
-    "info" \
-    "{\"project\":\"$CLAUDE_PROJECT_DIR\"}"
-```
+# Stop event
+echo '{"hook_event_name":"Stop","last_assistant_message":"Hello world"}' | \
+  CLAUDE_PROJECT_DIR=/tmp/test-project <NOTIFY_SH_PATH>
 
-### Stop Hook with Last Message
+# Notification event
+echo '{"hook_event_name":"Notification","message":"Permission needed","title":"Auth"}' | \
+  CLAUDE_PROJECT_DIR=/tmp/test-project <NOTIFY_SH_PATH>
 
-Include Claude's last response summary in the notification:
-
-```bash
-INPUT=$(cat -)
-LAST_MSG=$(echo "$INPUT" | jq -r '.last_assistant_message // "Task completed"' | head -c 200)
-<NOTIFY_TOOLS_DIR>/scripts/notify.sh \
-  "$(basename "$CLAUDE_PROJECT_DIR")" \
-  "$LAST_MSG" \
-  "info" \
-  "{\"project\":\"$CLAUDE_PROJECT_DIR\"}"
+# Empty stdin (fallback)
+echo '' | CLAUDE_PROJECT_DIR=/tmp/test <NOTIFY_SH_PATH>
 ```
