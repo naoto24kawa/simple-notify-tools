@@ -1,7 +1,7 @@
 import { execFile, spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 
-const MIN_MESSAGE_LENGTH = 80;
+const MIN_MESSAGE_LENGTH = 40;
 
 let claudePath: string | null = null;
 
