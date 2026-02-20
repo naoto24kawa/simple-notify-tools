@@ -1,4 +1,5 @@
 import { execFile, spawn } from "node:child_process";
+import { tmpdir } from "node:os";
 
 const MIN_MESSAGE_LENGTH = 80;
 
@@ -41,6 +42,7 @@ export async function summarizeMessage(message: string): Promise<string | null> 
   return new Promise((resolve) => {
     const child = spawn(bin, ["-p", "--model", "haiku", "--output-format", "text"], {
       env,
+      cwd: tmpdir(),
       stdio: ["pipe", "pipe", "pipe"],
       timeout: 30_000,
     });
