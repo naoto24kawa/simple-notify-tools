@@ -1,43 +1,78 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { execFile, spawn } from "node:child_process";
 
 const MIN_MESSAGE_LENGTH = 80;
 
-let client: Anthropic | null = null;
+let claudePath: string | null = null;
 
-export function isSummarizationEnabled(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY;
+async function findClaude(): Promise<string | null> {
+  if (claudePath) return claudePath;
+
+  return new Promise((resolve) => {
+    execFile("which", ["claude"], (err, stdout) => {
+      if (err || !stdout.trim()) {
+        resolve(null);
+        return;
+      }
+      claudePath = stdout.trim();
+      resolve(claudePath);
+    });
+  });
 }
 
-function getClient(): Anthropic {
-  if (!client) {
-    client = new Anthropic();
-  }
-  return client;
+export function isSummarizationEnabled(): boolean {
+  return process.env.NOTIFY_SUMMARIZE !== "false";
 }
 
 export async function summarizeMessage(message: string): Promise<string | null> {
   if (!isSummarizationEnabled()) return null;
   if (message.length <= MIN_MESSAGE_LENGTH) return null;
 
-  try {
-    const response = await getClient().messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 150,
-      messages: [
-        {
-          role: "user",
-          content: `Summarize the following notification message in one concise sentence (max 100 chars). Output ONLY the summary, no explanation.\n\n${message}`,
-        },
-      ],
-    });
-
-    const block = response.content[0];
-    if (block && block.type === "text") {
-      return block.text.trim();
-    }
-    return null;
-  } catch (err) {
-    console.warn("[summarize] AI summarization failed:", err);
+  const bin = await findClaude();
+  if (!bin) {
+    console.warn("[summarize] claude CLI not found, skipping summarization");
     return null;
   }
+
+  const prompt = `Summarize the following notification message in one concise sentence (max 100 chars). Output ONLY the summary, no explanation:\n${message}`;
+
+  const env = { ...process.env };
+  delete env.CLAUDECODE;
+
+  return new Promise((resolve) => {
+    const child = spawn(bin, ["-p", "--model", "haiku", "--output-format", "text"], {
+      env,
+      stdio: ["pipe", "pipe", "pipe"],
+      timeout: 30_000,
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    child.stdout.on("data", (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on("data", (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    child.on("error", (err) => {
+      console.warn("[summarize] claude spawn error:", err.message);
+      resolve(null);
+    });
+
+    child.on("close", (code) => {
+      if (code !== 0) {
+        console.warn(`[summarize] claude -p exited with code ${code}`);
+        if (stderr) console.warn("[summarize] stderr:", stderr.trim());
+        resolve(null);
+        return;
+      }
+      const result = stdout.trim();
+      resolve(result || null);
+    });
+
+    child.stdin.write(prompt);
+    child.stdin.end();
+  });
 }

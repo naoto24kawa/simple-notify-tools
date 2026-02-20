@@ -2,28 +2,28 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { isSummarizationEnabled, summarizeMessage } from "./summarize";
 
 describe("summarize", () => {
-  const originalEnv = process.env.ANTHROPIC_API_KEY;
+  const originalEnv = process.env.NOTIFY_SUMMARIZE;
 
   afterEach(() => {
-    if (originalEnv) {
-      process.env.ANTHROPIC_API_KEY = originalEnv;
+    if (originalEnv !== undefined) {
+      process.env.NOTIFY_SUMMARIZE = originalEnv;
     } else {
-      delete process.env.ANTHROPIC_API_KEY;
+      delete process.env.NOTIFY_SUMMARIZE;
     }
   });
 
-  test("isSummarizationEnabled returns false when API key is not set", () => {
-    delete process.env.ANTHROPIC_API_KEY;
-    expect(isSummarizationEnabled()).toBe(false);
-  });
-
-  test("isSummarizationEnabled returns true when API key is set", () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
+  test("isSummarizationEnabled returns true by default", () => {
+    delete process.env.NOTIFY_SUMMARIZE;
     expect(isSummarizationEnabled()).toBe(true);
   });
 
-  test("summarizeMessage returns null when API key is not set", async () => {
-    delete process.env.ANTHROPIC_API_KEY;
+  test("isSummarizationEnabled returns false when NOTIFY_SUMMARIZE=false", () => {
+    process.env.NOTIFY_SUMMARIZE = "false";
+    expect(isSummarizationEnabled()).toBe(false);
+  });
+
+  test("summarizeMessage returns null when disabled", async () => {
+    process.env.NOTIFY_SUMMARIZE = "false";
     const result = await summarizeMessage(
       "some long message that should be summarized by the AI service",
     );
@@ -31,7 +31,6 @@ describe("summarize", () => {
   });
 
   test("summarizeMessage returns null for short messages", async () => {
-    process.env.ANTHROPIC_API_KEY = "test-key";
     const result = await summarizeMessage("short msg");
     expect(result).toBeNull();
   });
