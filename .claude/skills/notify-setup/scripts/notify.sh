@@ -82,12 +82,10 @@ log "EVENT=${EVENT}"
 # Derive title from project directory
 TITLE="$(basename "${CLAUDE_PROJECT_DIR:-unknown}")"
 
-# Extract message and category based on event type
-CATEGORY="info"
+# Extract message based on event type
 case "$EVENT" in
   Stop)
     MESSAGE=$(printf '%s' "$INPUT" | jq -r '.last_assistant_message // "Task completed"' 2>/dev/null)
-    CATEGORY="complete"
     ;;
   Notification)
     MSG=$(printf '%s' "$INPUT" | jq -r '.message // empty' 2>/dev/null)
@@ -97,7 +95,6 @@ case "$EVENT" in
     else
       MESSAGE="${MSG:-Notification received}"
     fi
-    CATEGORY="action_required"
     ;;
   PreToolUse|PostToolUse)
     TOOL=$(printf '%s' "$INPUT" | jq -r '.tool_name // "unknown"' 2>/dev/null)
@@ -122,4 +119,4 @@ METADATA=$(jq -n \
 
 log "TITLE=${TITLE} MESSAGE=${MESSAGE:0:100}"
 
-send_notification "$TITLE" "$MESSAGE" "$CATEGORY" "$METADATA"
+send_notification "$TITLE" "$MESSAGE" "info" "$METADATA"
