@@ -71,9 +71,29 @@ Ask the user which hooks to enable via AskUserQuestion:
   2. "Stop + Notification (タスク完了 + 入力待ち)" - recommended for unattended operation
   3. "Notification のみ (入力待ちのみ)" - for users who only care about prompts
 
-### Step 4: Write Hook to settings.json
+### Step 4: Ask Configuration Level
 
-Add selected hooks to `<TARGET_PROJECT>/.claude/settings.json`.
+Ask the user which configuration level to use via AskUserQuestion:
+
+| Level | File | Description |
+|-------|------|-------------|
+| **Project Local** (default) | `settings.local.json` | 個人のみに適用。git管理外。 |
+| **Project** | `settings.json` | チーム全員に適用。git管理下。 |
+
+**Question example:**
+- "設定をどのレベルに書き込みますか?"
+- Options:
+  1. "プロジェクトローカル (推奨)" - settings.local.json に書き込む。個人のみに適用、git管理されない。
+  2. "プロジェクト" - settings.json に書き込む。チーム全員に適用、gitで共有される。
+
+### Step 5: Write Hook to Settings File
+
+Add selected hooks to the settings file chosen in Step 4.
+
+| Level | File |
+|-------|------|
+| Project Local | `<TARGET_PROJECT>/.claude/settings.local.json` |
+| Project | `<TARGET_PROJECT>/.claude/settings.json` |
 
 **Hook command template:**
 ```
@@ -99,9 +119,9 @@ Add this block under each selected event key (`Stop`, `Notification`) in the `ho
 
 See `examples/per-project-settings.json` for a complete Stop + Notification configuration. For LAN access, see `examples/lan-access-settings.json`.
 
-**Important**: If `.claude/settings.json` already has hooks, merge the new hooks into the existing `hooks` object. Do not overwrite other hooks.
+**Important**: If the target settings file already has hooks, merge the new hooks into the existing `hooks` object. Do not overwrite other hooks.
 
-### Step 5: Test
+### Step 6: Test
 
 Send test notifications for each enabled hook:
 
