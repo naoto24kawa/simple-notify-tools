@@ -1,43 +1,43 @@
 # AI Summarization
 
-通知サーバーが `claude` CLI (Claude Code) を検出すると、長い通知メッセージをAIが自動要約する。追加の API キーは不要。
+When the notification server detects the `claude` CLI (Claude Code) on the server machine, it automatically summarizes long notification messages using AI. No additional API key is needed.
 
-## 仕組み
+## How It Works
 
-1. `POST /api/notify` は即座に 201 を返す(hook をブロックしない)
-2. バックグラウンドで `claude -p` (pipe mode) を呼び、要約を生成
-3. 要約完了後、SSE `updated` イベントでフロントエンドに配信
-4. ダッシュボードで要約がメッセージの上にイタリック表示される
+1. `POST /api/notify` returns 201 immediately (does not block the hook)
+2. A background process calls `claude -p` (pipe mode) to generate a summary
+3. On completion, an SSE `updated` event delivers the summary to the frontend
+4. The dashboard displays the summary in italics above the original message
 
-## 前提条件
+## Prerequisites
 
-- `claude` CLI がサーバーマシンの PATH に存在すること
-- Claude Code の認証が済んでいること(`claude` が使える状態)
+- `claude` CLI must be available in PATH on the server machine
+- Claude Code authentication must be configured (`claude` must be usable)
 
-## 動作条件
+## Behavior Conditions
 
-| 条件 | 動作 |
-|------|------|
-| `claude` CLI 未検出 | 要約スキップ(警告ログのみ) |
-| メッセージが80文字以下 | 要約スキップ(短いメッセージは不要) |
-| `NOTIFY_SUMMARIZE=false` | 要約を明示的に無効化 |
-| `claude -p` 失敗/タイムアウト | 要約なし、通知は正常に残る |
+| Condition | Behavior |
+|-----------|----------|
+| `claude` CLI not found | Summarization skipped (warning logged) |
+| Message is 80 characters or shorter | Summarization skipped (not needed for short messages) |
+| `NOTIFY_SUMMARIZE=false` | Summarization explicitly disabled |
+| `claude -p` fails or times out | No summary generated; notification remains intact |
 
-## 無効化
+## Disabling Summarization
 
-要約を無効にするには、サーバーの環境変数に設定:
+Set the following environment variable on the server:
 
 ```bash
 NOTIFY_SUMMARIZE=false
 ```
 
-## SSE イベント
+## SSE Events
 
-要約が完了すると、サーバーから `updated` イベントが SSE ストリームに配信される:
+When summarization completes, the server emits an `updated` event on the SSE stream:
 
 ```
 event: updated
 data: {"id":"...","title":"...","message":"...","summary":"AI generated summary","category":"complete",...}
 ```
 
-フロントエンドは自動的に通知カードを更新し、要約を表示する。
+The frontend automatically updates the notification card to display the summary.

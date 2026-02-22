@@ -94,8 +94,8 @@ Fired after a tool finishes execution.
 
 | Event | Behavior | Category |
 |-------|----------|----------|
-| **Stop** | Extracts `last_assistant_message`, sanitizes (200 char limit), sends as notification | `complete` |
-| **Notification** | Extracts `title` and `message`, combines them, sends as notification | `action_required` |
+| **Stop** | Extracts `last_assistant_message`, sanitizes (200 char limit), sends as notification | `info` |
+| **Notification** | Extracts `title` and `message`, combines them, sends as notification | `info` |
 | **PreToolUse** | Logs the event, exits without sending notification | - |
 | **PostToolUse** | Logs the event, exits without sending notification | - |
 | **Unknown** | Sends fallback message "Hook event: <event_name>" | `info` |

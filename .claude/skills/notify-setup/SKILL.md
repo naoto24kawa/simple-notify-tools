@@ -5,7 +5,7 @@ description: This skill should be used when the user asks to "setup notification
 
 # Notification Setup Skill
 
-Claude Code の hook を設定し、通知サーバーへ通知を送る。
+Configure Claude Code hooks to send notifications to the simple-notify-tools server.
 
 ## Skill Base Directory
 
@@ -33,12 +33,13 @@ Execute these steps in order:
 **Required tools:** `curl`, `jq` (notify.sh depends on jq for JSON parsing)
 
 ```bash
+command -v curl >/dev/null 2>&1 && echo "curl: OK" || echo "curl: MISSING"
 command -v jq >/dev/null 2>&1 && echo "jq: OK" || echo "jq: MISSING - install with 'brew install jq' or 'apt install jq'"
 curl -sf http://<HOST>:23000/api/health
 ```
 
 - Default HOST is `localhost`.
-- If the server is not running, ask the user to start it or provide the host/port.
+- If the server is not running, prompt the user to start it or provide the host/port.
 
 ### Step 2: Resolve notify.sh Path
 
@@ -57,12 +58,12 @@ test -x <SKILL_BASE_DIR>/scripts/notify.sh && echo "OK"
 
 ### Step 3: Ask Which Hooks to Enable
 
-Ask the user which hooks to enable via AskUserQuestion:
+Prompt the user which hooks to enable via AskUserQuestion:
 
 | Hook | Description |
 |------|-------------|
-| **Stop** (default) | タスク完了時に通知 |
-| **Notification** | 入力待ち(permission prompt, idle, AskUserQuestion)時に通知 |
+| **Stop** (default) | Notifies on task completion |
+| **Notification** | Notifies on input prompts (permission prompt, idle, AskUserQuestion) |
 
 **Question example:**
 - "どのタイミングで通知を受け取りたいですか?"
@@ -73,12 +74,12 @@ Ask the user which hooks to enable via AskUserQuestion:
 
 ### Step 4: Ask Configuration Level
 
-Ask the user which configuration level to use via AskUserQuestion:
+Prompt the user which configuration level to use via AskUserQuestion:
 
 | Level | File | Description |
 |-------|------|-------------|
-| **Project Local** (default) | `settings.local.json` | 個人のみに適用。git管理外。 |
-| **Project** | `settings.json` | チーム全員に適用。git管理下。 |
+| **Project Local** (default) | `settings.local.json` | Personal only. Not tracked by git. |
+| **Project** | `settings.json` | Shared with team. Tracked by git. |
 
 **Question example:**
 - "設定をどのレベルに書き込みますか?"
@@ -100,7 +101,7 @@ Add selected hooks to the settings file chosen in Step 4.
 <NOTIFY_SH_PATH>
 ```
 
-That's it. `notify.sh` reads stdin JSON automatically and extracts the message.
+`notify.sh` reads stdin JSON automatically and extracts the message. No arguments needed.
 
 **Single hook block pattern** (same structure for each event type):
 ```json
@@ -155,22 +156,9 @@ NOTIFY_HOST=192.168.1.100 <NOTIFY_SH_PATH>
 | `NOTIFY_PORT` | 23000 | Server port |
 | `NOTIFY_LOG` | /tmp/notify-hook.log | Log file path |
 
-## Available Hook Events
-
-| Event | Use Case | stdin Data |
-|-------|----------|------------|
-| `Stop` | Task completion notification (most common) | `last_assistant_message` |
-| `Notification` | Claude's internal notification messages | `message`, `title`, `notification_type` |
-| `PreToolUse` | Logged only (no notification) | `tool_name`, `tool_input` |
-| `PostToolUse` | Logged only (no notification) | `tool_name`, `tool_response` |
-
-Hook event data is passed via **stdin as JSON**. Only `$CLAUDE_PROJECT_DIR` is available as an env var.
-
-For detailed per-event stdin fields, see `references/hook-events.md`.
-
 ## Additional Resources
 
-- **`references/api-reference.md`** - API endpoints, request/response formats, notify.sh reference
+- **`references/api-reference.md`** - API endpoints and request/response formats
 - **`references/hook-events.md`** - Per-event stdin JSON fields and integration patterns
-- **`references/ai-summarization.md`** - AI message summarization setup (`ANTHROPIC_API_KEY`)
+- **`references/ai-summarization.md`** - AI message summarization setup
 - **`examples/`** - Working hook configuration examples
