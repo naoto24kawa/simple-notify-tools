@@ -24,6 +24,10 @@ export function isSummarizationEnabled(): boolean {
   return process.env.NOTIFY_SUMMARIZE !== "false";
 }
 
+export function shouldSummarize(message: string): boolean {
+  return isSummarizationEnabled() && message.length > MIN_MESSAGE_LENGTH;
+}
+
 export async function summarizeMessage(message: string): Promise<string | null> {
   if (!isSummarizationEnabled()) return null;
   if (message.length <= MIN_MESSAGE_LENGTH) return null;

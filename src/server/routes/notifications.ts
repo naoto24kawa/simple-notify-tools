@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
-import { isSummarizationEnabled, summarizeMessage } from "../lib/summarize";
+import { isSummarizationEnabled, shouldSummarize, summarizeMessage } from "../lib/summarize";
 import { NotificationStore } from "../store/notification-store";
 
 const createNotificationSchema = z.object({
@@ -22,6 +22,7 @@ interface NotificationRoutesOptions {
     category: string;
     metadata: Record<string, unknown>;
   }) => void;
+  onSummary?: (notification: { title: string; summary: string; category: string }) => void;
 }
 
 export function createNotificationRoutes(filePath?: string, options?: NotificationRoutesOptions) {
@@ -45,10 +46,13 @@ export function createNotificationRoutes(filePath?: string, options?: Notificati
       for (const listener of listeners) {
         listener("created", notification);
       }
-      try {
-        options?.onNotify?.(notification);
-      } catch (err) {
-        console.warn("[notify] onNotify callback error:", err);
+      const willSummarize = shouldSummarize(notification.message);
+      if (!willSummarize) {
+        try {
+          options?.onNotify?.(notification);
+        } catch (err) {
+          console.warn("[notify] onNotify callback error:", err);
+        }
       }
       if (isSummarizationEnabled()) {
         void summarizeMessage(notification.message).then((summary) => {
@@ -57,6 +61,15 @@ export function createNotificationRoutes(filePath?: string, options?: Notificati
             if (updated) {
               for (const listener of listeners) {
                 listener("updated", updated);
+              }
+              try {
+                options?.onSummary?.({
+                  title: notification.title,
+                  summary,
+                  category: notification.category ?? "info",
+                });
+              } catch (err) {
+                console.warn("[notify] onSummary callback error:", err);
               }
             }
           }

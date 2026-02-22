@@ -23,6 +23,7 @@ app.get("/api/health", (c) => {
 
 // Notification routes
 const CODE_CMD = process.env.CODE_CMD || "code-insiders";
+const NOTIFY_PORT = Number(process.env.PORT) || 23000;
 const { app: notificationApp, subscribe } = createNotificationRoutes(undefined, {
   onNotify: (n) => {
     const project = typeof n.metadata.project === "string" ? n.metadata.project : undefined;
@@ -31,6 +32,15 @@ const { app: notificationApp, subscribe } = createNotificationRoutes(undefined, 
       message: n.message,
       group: n.category,
       execute: project ? `${CODE_CMD} ${project}` : undefined,
+      open: `http://localhost:${NOTIFY_PORT}`,
+    });
+  },
+  onSummary: (n) => {
+    sendDesktopNotification({
+      title: n.title,
+      message: n.summary,
+      group: n.category,
+      open: `http://localhost:${NOTIFY_PORT}`,
     });
   },
 });
